@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Deadline & Workload Planner - IDT Demo</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Google Identity Services SDK -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
+
+    <!-- AUTHENTICATION OVERLAY / LOGIN MODAL -->
+    <div id="auth-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 sm:p-8 shadow-2xl relative overflow-hidden">
+            <div class="absolute -top-24 -right-24 w-48 h-48 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none"></div>
+            
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 mb-4 text-2xl shadow-inner">
+                    <i class="fa-solid fa-brain"></i>
+                </div>
+                <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-white">Smart Deadline Planner</h1>
+                <p class="text-xs text-indigo-400 font-medium mt-1">by Kinetix • IDT Project Demo</p>
+            </div>
+
+            <!-- Tabs for Login Modes -->
+            <div class="grid grid-cols-2 gap-2 p-1 bg-slate-950 rounded-xl mb-6 border border-slate-800/80">
+                <button onclick="switchAuthTab('tester')" id="tab-tester" class="py-2.5 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow transition-all">Master / Team</button>
+                <button onclick="switchAuthTab('guest')" id="tab-guest" class="py-2.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition-all">Public / Guest</button>
+            </div>
+
+            <!-- Tester Login Form -->
+            <div id="form-tester" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Email Address</label>
+                    <input type="email" id="login-email" placeholder="Enter your email" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Password</label>
+                    <input type="password" id="login-password" placeholder="Enter your password" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors">
+                </div>
+                
+                <!-- Remember Me Checkbox -->
+                <div class="flex items-center justify-between text-xs pt-1">
+                    <label class="flex items-center gap-2 cursor-pointer text-slate-300 select-none">
+                        <input type="checkbox" id="remember-me" class="w-4 h-4 rounded bg-slate-950 border-slate-700 text-indigo-600 focus:ring-0 cursor-pointer">
+                        <span>Remember this device</span>
+                    </label>
+                </div>
+
+                <div id="login-error" class="text-xs text-rose-400 hidden font-medium"></div>
+                
+                <button onclick="handleTesterLogin()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-3 rounded-xl transition-all shadow-lg shadow-indigo-600/25 flex items-center justify-center gap-2">
+                    <span>Authenticate Access</span>
+                    <i class="fa-solid fa-arrow-right text-xs"></i>
+                </button>
+            </div>
+
+            <!-- Guest Login View (with Official Google Sign-In) -->
+            <div id="form-guest" class="space-y-4 hidden text-center py-2">
+                <p class="text-xs text-slate-300 leading-relaxed">Sign in with your official Google account to sync your workload and statistics across all your devices.</p>
+                
+                <!-- Official Google Sign In Button Container -->
+                <div id="google-signin-btn" class="flex justify-center py-2"></div>
+
+                <div class="relative flex py-1 items-center">
+                    <div class="flex-grow border-t border-slate-800"></div>
+                    <span class="flex-shrink mx-4 text-[10px] text-slate-500 uppercase">or</span>
+                    <div class="flex-grow border-t border-slate-800"></div>
+                </div>
+
+                <button onclick="handleAnonymousGuestLogin()" class="w-full bg-slate-800 hover:bg-slate-700 text-white font-medium py-2.5 rounded-xl transition-all border border-slate-700 flex items-center justify-center gap-2 text-xs">
+                    <i class="fa-solid fa-globe text-emerald-400"></i>
+                    <span>Continue as Anonymous Guest</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP CONTAINER -->
+    <div id="app-container" class="hidden flex-1 flex flex-col">
+        <!-- Top Navigation Bar -->
+        <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-40 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-indigo-600/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0">
+                    <i class="fa-solid fa-brain"></i>
+                </div>
+                <div class="min-w-0">
+                    <h1 class="font-bold text-xs sm:text-base tracking-tight text-white flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                        <span class="truncate">Smart Deadline Planner</span>
+                        <span class="text-[10px] sm:text-xs font-medium text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-1.5 sm:px-2 py-0.5 rounded-md">by Kinetix</span>
+                    </h1>
+                    <div class="flex items-center gap-2 mt-0.5">
+                        <span id="role-badge" class="text-[9px] sm:text-[10px] uppercase tracking-wider px-2 py-0.2 rounded-full font-semibold border"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3 shrink-0">
+                <div class="text-right hidden md:block">
+                    <div id="user-display-name" class="text-xs font-medium text-slate-200"></div>
+                    <div id="user-display-email" class="text-[10px] text-slate-400"></div>
+                </div>
+                <button onclick="logout()" class="bg-slate-800 hover:bg-rose-600/20 hover:text-rose-400 hover:border-rose-500/30 text-slate-300 border border-slate-700 px-2.5 sm:px-3 py-2 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5 sm:gap-2" title="Switch User / Logout">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <span class="hidden sm:inline">Logout</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Dashboard Content -->
+        <main class="max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6 flex-1">
+
+            <!-- AI Guardian Banner -->
+            <div class="bg-gradient-to-r from-indigo-950/60 via-slate-900 to-slate-900 border border-indigo-500/30 rounded-2xl p-4 sm:p-5 shadow-xl relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div class="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="flex items-start gap-3 sm:gap-4">
+                    <div class="p-2.5 sm:p-3 bg-indigo-600/20 border border-indigo-500/30 rounded-xl text-indigo-400 text-lg sm:text-xl shrink-0 mt-0.5">
+                        <i class="fa-solid fa-sparkles"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xs sm:text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2 flex-wrap">
+                            <span>AI Workload Guardian</span>
+                            <span class="bg-indigo-500/20 text-indigo-300 text-[10px] px-2 py-0.5 rounded font-medium border border-indigo-500/30">Active Analysis</span>
+                        </h2>
+                        <p id="ai-guardian-text" class="text-xs text-slate-300 mt-1 leading-relaxed">Analyzing your task distribution and upcoming deadlines...</p>
+                    </div>
+                </div>
+                <button onclick="runAiOptimization()" class="w-full md:w-auto bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 sm:py-2 rounded-xl text-xs font-semibold transition-all shadow-md shadow-indigo-600/20 shrink-0 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span>Optimize Schedule</span>
+                </button>
+            </div>
+
+            <!-- Metrics Overview Grid -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm">
+                    <div class="flex items-center justify-between text-slate-400 mb-2 sm:mb-3">
+                        <span class="text-[10px] sm:text-xs font-medium uppercase tracking-wider truncate">Active Deadlines</span>
+                        <div class="p-1.5 sm:p-2 bg-indigo-500/10 text-indigo-400 rounded-xl"><i class="fa-solid fa-clock"></i></div>
+                    </div>
+                    <div id="stat-active-deadlines" class="text-xl sm:text-2xl font-bold text-white">0</div>
+                    <div class="text-[10px] sm:text-[11px] text-slate-400 mt-1">Pending completion</div>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm">
+                    <div class="flex items-center justify-between text-slate-400 mb-2 sm:mb-3">
+                        <span class="text-[10px] sm:text-xs font-medium uppercase tracking-wider truncate">Workload Score</span>
+                        <div class="p-1.5 sm:p-2 bg-amber-500/10 text-amber-400 rounded-xl"><i class="fa-solid fa-gauge-high"></i></div>
+                    </div>
+                    <div id="stat-workload-score" class="text-xl sm:text-2xl font-bold text-white">0 hrs</div>
+                    <div class="text-[10px] sm:text-[11px] text-slate-400 mt-1">Total estimated effort</div>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm">
+                    <div class="flex items-center justify-between text-slate-400 mb-2 sm:mb-3">
+                        <span class="text-[10px] sm:text-xs font-medium uppercase tracking-wider truncate">Due Today / Soon</span>
+                        <div class="p-1.5 sm:p-2 bg-rose-500/10 text-rose-400 rounded-xl"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                    </div>
+                    <div id="stat-due-soon" class="text-xl sm:text-2xl font-bold text-white">0</div>
+                    <div class="text-[10px] sm:text-[11px] text-slate-400 mt-1">Immediate attention</div>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm">
+                    <div class="flex items-center justify-between text-slate-400 mb-2 sm:mb-3">
+                        <span class="text-[10px] sm:text-xs font-medium uppercase tracking-wider truncate">Completed</span>
+                        <div class="p-1.5 sm:p-2 bg-emerald-500/10 text-emerald-400 rounded-xl"><i class="fa-solid fa-circle-check"></i></div>
+                    </div>
+                    <div id="stat-completed" class="text-xl sm:text-2xl font-bold text-white">0</div>
+                    <div class="text-[10px] sm:text-[11px] text-slate-400 mt-1">Successfully finished</div>
+                </div>
+            </div>
+
+            <!-- Main Workspace Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+                
+                <!-- Left 2 Cols: Task Management -->
+                <div class="lg:col-span-2 space-y-4">
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm">
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-5">
+                            <h3 class="font-bold text-white text-xs sm:text-sm uppercase tracking-wider flex items-center gap-2">
+                                <i class="fa-solid fa-list-check text-indigo-400"></i>
+                                Task & Deadline Queue
+                            </h3>
+                            <div class="flex items-center gap-2 w-full sm:w-auto">
+                                <button onclick="openHistoryModal()" class="flex-1 sm:flex-none bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-3 py-2.5 sm:py-2 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5" title="Review Previous Day Tasks">
+                                    <i class="fa-solid fa-clock-rotate-left text-indigo-400"></i>
+                                    <span>Check Previous Tasks</span>
+                                </button>
+                                <button onclick="openTaskModal()" class="flex-1 sm:flex-none bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 sm:py-2 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2 shadow-sm">
+                                    <i class="fa-solid fa-plus"></i>
+                                    <span>Add New Task</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Search & Filters -->
+                        <div class="flex flex-col sm:flex-row gap-3 mb-4">
+                            <div class="relative flex-1">
+                                <i class="fa-solid fa-search absolute left-3.5 top-3 text-slate-500 text-xs"></i>
+                                <input type="text" id="task-search" oninput="renderTasks()" placeholder="Search tasks by title..." class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-4 py-2.5 sm:py-2 text-xs text-white focus:outline-none focus:border-indigo-500">
+                            </div>
+                            <select id="task-filter-category" onchange="renderTasks()" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 sm:py-2 text-xs text-slate-300 focus:outline-none focus:border-indigo-500">
+                                <option value="all">All Categories</option>
+                                <option value="Academic">Academic</option>
+                                <option value="Development">Development</option>
+                                <option value="Research">Research</option>
+                                <option value="Personal">Personal</option>
+                            </select>
+                        </div>
+
+                        <!-- Task List Container -->
+                        <div id="task-list" class="space-y-3 max-h-[480px] overflow-y-auto pr-1">
+                            <!-- Populated via JavaScript -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Col: Weekly Workload & Breakdown -->
+                <div class="space-y-4 sm:space-y-6">
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-bold text-white text-xs sm:text-sm uppercase tracking-wider flex items-center gap-2">
+                                <i class="fa-solid fa-chart-bar text-indigo-400"></i>
+                                Weekly Workload
+                            </h3>
+                            <span id="weekly-reset-status" class="text-[10px] text-slate-400">Resets Sun 12 AM</span>
+                        </div>
+                        <div id="weekly-workload-bars" class="space-y-3">
+                            <!-- Populated via JavaScript -->
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm">
+                        <h3 class="font-bold text-white text-xs sm:text-sm uppercase tracking-wider flex items-center gap-2 mb-3">
+                            <i class="fa-solid fa-shield-halved text-emerald-400"></i>
+                            IDT System Status
+                        </h3>
+                        <ul class="space-y-2 text-xs text-slate-400">
+                            <li class="flex items-center justify-between py-1 border-b border-slate-800/60">
+                                <span>Algorithmic Balance</span>
+                                <span class="text-emerald-400 font-medium">Optimal</span>
+                            </li>
+                            <li class="flex items-center justify-between py-1 border-b border-slate-800/60">
+                                <span>Google OAuth</span>
+                                <span class="text-blue-400 font-medium">Verified Active</span>
+                            </li>
+                            <li class="flex items-center justify-between py-1">
+                                <span>Storage Sync</span>
+                                <span class="text-slate-300 font-medium">LocalStorage</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- FLOATING DEVICE MODE INDICATOR (Bottom Right) -->
+    <div id="device-indicator" class="fixed bottom-4 right-4 z-30 hidden bg-slate-900/90 border border-slate-800 backdrop-blur px-3 py-1.5 rounded-full shadow-lg text-[11px] flex items-center gap-2 text-slate-300">
+        <span id="device-icon" class="text-indigo-400"><i class="fa-solid fa-desktop"></i></span>
+        <span id="device-text">Desktop Mode</span>
+    </div>
+
+    <!-- ADD/EDIT TASK MODAL -->
+    <div id="task-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-5 sm:p-6 shadow-2xl">
+            <div class="flex items-center justify-between mb-4">
+                <h3 id="modal-title" class="font-bold text-white text-sm sm:text-base">Add New Task & Deadline</h3>
+                <button onclick="closeTaskModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form id="task-form" onsubmit="saveTask(event)" class="space-y-4">
+                <input type="hidden" id="task-id">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Task Title</label>
+                    <input type="text" id="form-title" required placeholder="e.g. IDT Project Documentation" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Category</label>
+                        <select id="form-category" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-slate-300 focus:outline-none focus:border-indigo-500">
+                            <option value="Academic">Academic</option>
+                            <option value="Development">Development</option>
+                            <option value="Research">Research</option>
+                            <option value="Personal">Personal</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Estimated Hours</label>
+                        <input type="number" id="form-hours" min="1" max="40" value="4" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Deadline Date & Time</label>
+                        <input type="datetime-local" id="form-deadline" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Priority Level</label>
+                        <select id="form-priority" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-slate-300 focus:outline-none focus:border-indigo-500">
+                            <option value="High">High Priority</option>
+                            <option value="Medium" selected>Medium Priority</option>
+                            <option value="Low">Low Priority</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button" onclick="closeTaskModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2.5 sm:py-2 rounded-xl text-xs font-semibold transition-all">Cancel</button>
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 sm:py-2 rounded-xl text-xs font-semibold transition-all shadow-md shadow-indigo-600/25">Save Task</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- PREVIOUS TASKS HISTORY MODAL -->
+    <div id="history-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-5 sm:p-6 shadow-2xl flex flex-col max-h-[85vh]">
+            <div class="flex items-center justify-between mb-4 shrink-0">
+                <h3 class="font-bold text-white text-sm sm:text-base flex items-center gap-2">
+                    <i class="fa-solid fa-clock-rotate-left text-indigo-400"></i>
+                    Previous Day's Tasks
+                </h3>
+                <button onclick="closeHistoryModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <p class="text-xs text-slate-400 mb-4 shrink-0">Review tasks and deadlines archived from yesterday's session:</p>
+            <div id="history-task-list" class="space-y-3 overflow-y-auto pr-1 flex-1">
+                <!-- Populated via JavaScript -->
+            </div>
+            <div class="pt-4 mt-2 border-t border-slate-800 text-right shrink-0">
+                <button onclick="closeHistoryModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-xl text-xs font-semibold transition-all">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // Predefined Credentials & Roles
+        const USERS = {
+            "yashas@smartplanner.id": { pass: "master2026", name: "Yashas B S", role: "Master Tester", badge: "bg-indigo-500/20 text-indigo-300 border-indigo-500/30" },
+            "team@smartplanner.id": { pass: "team2026", name: "IDT Evaluation Team", role: "Team Tester", badge: "bg-amber-500/20 text-amber-300 border-amber-500/30" }
+        };
+
+        let currentUser = null;
+        let tasks = [];
+        let historyTasks = [];
+
+        // Initialize Google Identity Services on window load
+        window.onload = function () {
+            google.accounts.id.initialize({
+                client_id: "1058756730435-0b1h2tmegb4b0r2jhb9kpjngjp6egois.apps.googleusercontent.com", // Replace with your Google Client ID
+                callback: handleGoogleSignInResponse
+            });
+
+            // Render official Google Sign-In button
+            google.accounts.id.renderButton(
+                document.getElementById("google-signin-btn"),
+                { theme: "outline", size: "large", width: "100%", shape: "pill" }
+            );
+        };
+
+        // Handle Google OAuth JWT Credential Response
+        function handleGoogleSignInResponse(response) {
+            const responsePayload = parseJwt(response.credential);
+            
+            currentUser = {
+                email: responsePayload.email,
+                name: responsePayload.name,
+                role: "Verified Gmail User",
+                badge: "bg-blue-500/20 text-blue-300 border-blue-500/30"
+            };
+
+            localStorage.setItem('smart_planner_session', JSON.stringify(currentUser));
+            loadUserData();
+            initApp();
+        }
+
+        // Helper function to decode Google JWT token securely
+        function parseJwt(token) {
+            var base64Url = token.split('.')[1];
+            var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            var jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                return '%' + ('0' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            return JSON.parse(jsonPayload);
+        }
+
+        function getStorageKey(suffix) {
+            if (!currentUser) return `smart_planner_${suffix}_default`;
+            return `smart_planner_${suffix}_${currentUser.email.replace(/[@.]/g, '_')}`;
+        }
+
+        function loadUserData() {
+            tasks = JSON.parse(localStorage.getItem(getStorageKey('tasks'))) || [];
+            historyTasks = JSON.parse(localStorage.getItem(getStorageKey('history'))) || [];
+            checkDailyMidnightReset();
+        }
+
+        function checkDailyMidnightReset() {
+            const todayStr = new Date().toDateString();
+            const dateKey = getStorageKey('last_date');
+            const lastActiveDate = localStorage.getItem(dateKey);
+
+            if (lastActiveDate && lastActiveDate !== todayStr) {
+                if (tasks.length > 0) {
+                    const archivedBatch = tasks.map(t => ({ ...t, archivedDate: lastActiveDate }));
+                    historyTasks = [...archivedBatch, ...historyTasks];
+                    localStorage.setItem(getStorageKey('history'), JSON.stringify(historyTasks));
+                }
+                tasks = [];
+                localStorage.setItem(getStorageKey('tasks'), JSON.stringify(tasks));
+            }
+            localStorage.setItem(dateKey, todayStr);
+        }
+
+        function checkDeviceType() {
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+            const indicator = document.getElementById('device-indicator');
+            const icon = document.getElementById('device-icon');
+            const text = document.getElementById('device-text');
+            const statusMode = document.getElementById('status-device-mode');
+
+            indicator.classList.remove('hidden');
+            if (isMobile) {
+                icon.innerHTML = `<i class="fa-solid fa-mobile-screen-button"></i>`;
+                text.textContent = "Mobile UI Active";
+                if (statusMode) statusMode.textContent = "Mobile Optimized";
+            } else {
+                icon.innerHTML = `<i class="fa-solid fa-desktop"></i>`;
+                text.textContent = "Desktop UI Active";
+                if (statusMode) statusMode.textContent = "Desktop Workstation";
+            }
+        }
+
+        window.addEventListener('resize', checkDeviceType);
+
+        window.addEventListener('DOMContentLoaded', () => {
+            checkDeviceType();
+            const savedSession = localStorage.getItem('smart_planner_session');
+            if (savedSession) {
+                try {
+                    currentUser = JSON.parse(savedSession);
+                    loadUserData();
+                    initApp();
+                } catch (e) {
+                    localStorage.removeItem('smart_planner_session');
+                }
+            }
+        });
+
+        function switchAuthTab(mode) {
+            const testerTab = document.getElementById('tab-tester');
+            const guestTab = document.getElementById('tab-guest');
+            const testerForm = document.getElementById('form-tester');
+            const guestForm = document.getElementById('form-guest');
+
+            if (mode === 'tester') {
+                testerTab.className = "py-2.5 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow transition-all";
+                guestTab.className = "py-2.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition-all";
+                testerForm.classList.remove('hidden');
+                guestForm.classList.add('hidden');
+            } else {
+                guestTab.className = "py-2.5 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow transition-all";
+                testerTab.className = "py-2.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition-all";
+                guestForm.classList.remove('hidden');
+                testerForm.classList.add('hidden');
+            }
+        }
+
+        function handleTesterLogin() {
+            const email = document.getElementById('login-email').value.trim().toLowerCase();
+            const pass = document.getElementById('login-password').value.trim();
+            const rememberMe = document.getElementById('remember-me').checked;
+            const errorDiv = document.getElementById('login-error');
+
+            if (USERS[email] && USERS[email].pass === pass) {
+                currentUser = { email, ...USERS[email] };
+                if (rememberMe) {
+                    localStorage.setItem('smart_planner_session', JSON.stringify(currentUser));
+                }
+                loadUserData();
+                initApp();
+            } else {
+                errorDiv.textContent = "Invalid email or password. Access denied.";
+                errorDiv.classList.remove('hidden');
+            }
+        }
+
+        function handleAnonymousGuestLogin() {
+            currentUser = { 
+                email: "anonymous.guest@smartplanner.id", 
+                name: "Anonymous Reviewer", 
+                role: "Public Guest", 
+                badge: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30" 
+            };
+            loadUserData();
+            initApp();
+        }
+
+        function initApp() {
+            document.getElementById('auth-modal').classList.add('hidden');
+            document.getElementById('app-container').classList.remove('hidden');
+
+            document.getElementById('user-display-name').textContent = currentUser.name;
+            document.getElementById('user-display-email').textContent = currentUser.email;
+            
+            const badgeEl = document.getElementById('role-badge');
+            badgeEl.textContent = currentUser.role;
+            badgeEl.className = `text-[9px] sm:text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full font-semibold border ${currentUser.badge}`;
+
+            renderTasks();
+            updateMetrics();
+            updateWeeklyWorkload();
+            runAiOptimization();
+        }
+
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('smart_planner_session');
+            document.getElementById('app-container').classList.add('hidden');
+            document.getElementById('auth-modal').classList.remove('hidden');
+            document.getElementById('login-email').value = '';
+            document.getElementById('login-password').value = '';
+            document.getElementById('login-error').classList.add('hidden');
+            document.getElementById('remember-me').checked = false;
+        }
+
+        function renderTasks() {
+            const search = document.getElementById('task-search').value.toLowerCase();
+            const categoryFilter = document.getElementById('task-filter-category').value;
+            const container = document.getElementById('task-list');
+
+            const filtered = tasks.filter(t => {
+                const matchesSearch = t.title.toLowerCase().includes(search);
+                const matchesCat = categoryFilter === 'all' || t.category === categoryFilter;
+                return matchesSearch && matchesCat;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="text-center py-12 text-slate-500 text-xs">No active tasks for today. Click 'Add New Task' to start.</div>`;
+                return;
+            }
+
+            container.innerHTML = filtered.map(t => `
+                <div class="bg-slate-950 border ${t.completed ? 'border-slate-800/40 opacity-60' : 'border-slate-800'} rounded-xl p-3.5 sm:p-4 flex items-center justify-between gap-3 transition-all hover:border-slate-700">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <input type="checkbox" ${t.completed ? 'checked' : ''} onchange="toggleTask(${t.id})" class="w-4 h-4 rounded bg-slate-900 border-slate-700 text-indigo-600 focus:ring-0 cursor-pointer shrink-0">
+                        <div class="min-w-0">
+                            <h4 class="text-xs font-semibold text-white truncate ${t.completed ? 'line-through text-slate-400' : ''}">${t.title}</h4>
+                            <div class="flex items-center gap-2 mt-1 text-[10px] text-slate-400 flex-wrap">
+                                <span class="px-2 py-0.5 rounded bg-slate-900 border border-slate-800">${t.category}</span>
+                                <span><i class="fa-solid fa-clock text-indigo-400"></i> ${t.hours} hrs</span>
+                                <span><i class="fa-solid fa-calendar text-slate-500"></i> ${new Date(t.deadline).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <span class="text-[9px] sm:text-[10px] px-2 py-0.5 rounded font-medium ${t.priority === 'High' ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' : t.priority === 'Medium' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'}">${t.priority}</span>
+                        <button onclick="deleteTask(${t.id})" class="text-slate-500 hover:text-rose-400 p-1.5 transition-colors" title="Delete Task"><i class="fa-solid fa-trash text-xs"></i></button>
+                    </div>
+                </div>
+            `).join('');
+
+            updateMetrics();
+            updateWeeklyWorkload();
+        }
+
+        function toggleTask(id) {
+            tasks = tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t);
+            saveAndRefresh();
+        }
+
+        function deleteTask(id) {
+            tasks = tasks.filter(t => t.id !== id);
+            saveAndRefresh();
+        }
+
+        function openTaskModal() {
+            document.getElementById('task-id').value = '';
+            document.getElementById('form-title').value = '';
+            document.getElementById('form-hours').value = '4';
+            document.getElementById('form-deadline').value = '';
+            document.getElementById('modal-title').textContent = "Add New Task & Deadline";
+            document.getElementById('task-modal').classList.remove('hidden');
+        }
+
+        function closeTaskModal() {
+            document.getElementById('task-modal').classList.add('hidden');
+        }
+
+        function openHistoryModal() {
+            const container = document.getElementById('history-task-list');
+            if (historyTasks.length === 0) {
+                container.innerHTML = `<div class="text-center py-10 text-slate-500 text-xs">No previous task history found for this account.</div>`;
+            } else {
+                container.innerHTML = historyTasks.map(h => `
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 flex items-center justify-between gap-3">
+                        <div class="min-w-0">
+                            <h4 class="text-xs font-semibold text-white truncate">${h.title}</h4>
+                            <div class="flex items-center gap-2 mt-1 text-[10px] text-slate-400 flex-wrap">
+                                <span class="px-2 py-0.5 rounded bg-slate-900 border border-slate-800">${h.category}</span>
+                                <span><i class="fa-solid fa-clock text-indigo-400"></i> ${h.hours} hrs</span>
+                                <span class="text-indigo-300">Archived: ${h.archivedDate || 'Previous Day'}</span>
+                            </div>
+                        </div>
+                        <span class="text-[9px] px-2 py-0.5 rounded font-medium ${h.completed ? 'bg-emerald-500/10 text-emerald-400' : 'bg-slate-800 text-slate-400'}">${h.completed ? 'Completed' : 'Expired'}</span>
+                    </div>
+                `).join('');
+            }
+            document.getElementById('history-modal').classList.remove('hidden');
+        }
+
+        function closeHistoryModal() {
+            document.getElementById('history-modal').classList.add('hidden');
+        }
+
+        function saveTask(e) {
+            e.preventDefault();
+            const title = document.getElementById('form-title').value;
+            const category = document.getElementById('form-category').value;
+            const hours = parseInt(document.getElementById('form-hours').value);
+            const deadline = document.getElementById('form-deadline').value;
+            const priority = document.getElementById('form-priority').value;
+
+            const newTask = {
+                id: Date.now(),
+                title,
+                category,
+                hours,
+                deadline,
+                priority,
+                completed: false,
+                createdDate: new Date().toDateString()
+            };
+
+            tasks.push(newTask);
+            saveAndRefresh();
+            closeTaskModal();
+        }
+
+        function saveAndRefresh() {
+            localStorage.setItem(getStorageKey('tasks'), JSON.stringify(tasks));
+            renderTasks();
+            runAiOptimization();
+        }
+
+        function updateMetrics() {
+            const active = tasks.filter(t => !t.completed).length;
+            const totalHours = tasks.filter(t => !t.completed).reduce((sum, t) => sum + t.hours, 0);
+            const completedCount = tasks.filter(t => t.completed).length;
+            
+            const now = new Date();
+            const dueSoon = tasks.filter(t => {
+                if (t.completed) return false;
+                const diff = new Date(t.deadline) - now;
+                return diff > 0 && diff <= 48 * 60 * 60 * 1000;
+            }).length;
+
+            document.getElementById('stat-active-deadlines').textContent = active;
+            document.getElementById('stat-workload-score').textContent = totalHours + ' hrs';
+            document.getElementById('stat-due-soon').textContent = dueSoon;
+            document.getElementById('stat-completed').textContent = completedCount;
+        }
+
+        function updateWeeklyWorkload() {
+            const days = [
+                { name: 'Mon', index: 1 },
+                { name: 'Tue', index: 2 },
+                { name: 'Wed', index: 3 },
+                { name: 'Thu', index: 4 },
+                { name: 'Fri', index: 5 },
+                { name: 'Sat', index: 6 },
+                { name: 'Sun', index: 0 }
+            ];
+            
+            const container = document.getElementById('weekly-workload-bars');
+            const activeTasks = tasks.filter(t => !t.completed);
+
+            const workloadMap = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+            activeTasks.forEach(t => {
+                const dayOfWeek = new Date(t.deadline).getDay();
+                workloadMap[dayOfWeek] += t.hours;
+            });
+
+            container.innerHTML = days.map(d => {
+                const load = workloadMap[d.index];
+                const percent = Math.min(Math.round((load / 12) * 100), 100);
+                const color = load > 8 ? 'bg-rose-500' : load > 4 ? 'bg-amber-500' : 'bg-indigo-500';
+
+                return `
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-slate-300 font-medium">${d.name}</span>
+                            <span class="text-slate-400">${load} hrs</span>
+                        </div>
+                        <div class="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800">
+                            <div class="${color} h-full rounded-full transition-all duration-500" style="width: ${percent}%"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function runAiOptimization() {
+            const activeTasks = tasks.filter(t => !t.completed);
+            const totalHours = activeTasks.reduce((sum, t) => sum + t.hours, 0);
+            const aiText = document.getElementById('ai-guardian-text');
+
+            if (activeTasks.length === 0) {
+                aiText.textContent = "All tasks completed! Your schedule is completely clear and balanced.";
+                return;
+            }
+
+            if (totalHours > 15) {
+                aiText.textContent = `High workload detected (${totalHours} hours pending). AI recommends postponing non-critical tasks and prioritizing high-priority deadlines for optimal productivity.`;
+            } else {
+                aiText.textContent = `Workload is well-balanced (${totalHours} hours pending). You have sufficient capacity to complete upcoming milestones without burnout risk.`;
+            }
+        }
+    </script>
+</body>
+</html>
