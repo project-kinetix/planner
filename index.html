@@ -23,7 +23,7 @@
         <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 sm:p-8 shadow-2xl relative overflow-hidden">
             <div class="absolute -top-24 -right-24 w-48 h-48 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none"></div>
             
-            <div class="text-center mb-8">
+            <div class="text-center mb-6">
                 <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 mb-4 text-2xl shadow-inner">
                     <i class="fa-solid fa-brain"></i>
                 </div>
@@ -31,56 +31,12 @@
                 <p class="text-xs text-indigo-400 font-medium mt-1">by Kinetix • IDT Project Demo</p>
             </div>
 
-            <!-- Tabs for Login Modes -->
-            <div class="grid grid-cols-2 gap-2 p-1 bg-slate-950 rounded-xl mb-6 border border-slate-800/80">
-                <button onclick="switchAuthTab('tester')" id="tab-tester" class="py-2.5 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow transition-all">Master / Team</button>
-                <button onclick="switchAuthTab('guest')" id="tab-guest" class="py-2.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition-all">Public / Guest</button>
-            </div>
-
-            <!-- Tester Login Form -->
-            <div id="form-tester" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-medium text-slate-300 mb-1">Email Address</label>
-                    <input type="email" id="login-email" placeholder="Enter your email" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors">
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-slate-300 mb-1">Password</label>
-                    <input type="password" id="login-password" placeholder="Enter your password" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors">
-                </div>
-                
-                <!-- Remember Me Checkbox -->
-                <div class="flex items-center justify-between text-xs pt-1">
-                    <label class="flex items-center gap-2 cursor-pointer text-slate-300 select-none">
-                        <input type="checkbox" id="remember-me" class="w-4 h-4 rounded bg-slate-950 border-slate-700 text-indigo-600 focus:ring-0 cursor-pointer">
-                        <span>Remember this device</span>
-                    </label>
-                </div>
-
-                <div id="login-error" class="text-xs text-rose-400 hidden font-medium"></div>
-                
-                <button onclick="handleTesterLogin()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-3 rounded-xl transition-all shadow-lg shadow-indigo-600/25 flex items-center justify-center gap-2">
-                    <span>Authenticate Access</span>
-                    <i class="fa-solid fa-arrow-right text-xs"></i>
-                </button>
-            </div>
-
-            <!-- Guest Login View (with Official Google Sign-In) -->
-            <div id="form-guest" class="space-y-4 hidden text-center py-2">
-                <p class="text-xs text-slate-300 leading-relaxed">Sign in with your official Google account to sync your workload and statistics across all your devices.</p>
+            <!-- Google Sign-In View -->
+            <div class="space-y-4 text-center py-2">
+                <p class="text-xs text-slate-300 leading-relaxed mb-4">Sign in securely with your official Google account to sync your workload and statistics across all your devices.</p>
                 
                 <!-- Official Google Sign In Button Container -->
                 <div id="google-signin-btn" class="flex justify-center py-2"></div>
-
-                <div class="relative flex py-1 items-center">
-                    <div class="flex-grow border-t border-slate-800"></div>
-                    <span class="flex-shrink mx-4 text-[10px] text-slate-500 uppercase">or</span>
-                    <div class="flex-grow border-t border-slate-800"></div>
-                </div>
-
-                <button onclick="handleAnonymousGuestLogin()" class="w-full bg-slate-800 hover:bg-slate-700 text-white font-medium py-2.5 rounded-xl transition-all border border-slate-700 flex items-center justify-center gap-2 text-xs">
-                    <i class="fa-solid fa-globe text-emerald-400"></i>
-                    <span>Continue as Anonymous Guest</span>
-                </button>
             </div>
         </div>
     </div>
@@ -343,12 +299,6 @@
 
     <!-- JAVASCRIPT LOGIC -->
     <script>
-        // Predefined Credentials & Roles
-        const USERS = {
-            "yashas@smartplanner.id": { pass: "master2026", name: "Yashas B S", role: "Master Tester", badge: "bg-indigo-500/20 text-indigo-300 border-indigo-500/30" },
-            "team@smartplanner.id": { pass: "team2026", name: "IDT Evaluation Team", role: "Team Tester", badge: "bg-amber-500/20 text-amber-300 border-amber-500/30" }
-        };
-
         let currentUser = null;
         let tasks = [];
         let historyTasks = [];
@@ -356,7 +306,7 @@
         // Initialize Google Identity Services on window load
         window.onload = function () {
             google.accounts.id.initialize({
-                client_id: "1058756730435-0b1h2tmegb4b0r2jhb9kpjngjp6egois.apps.googleusercontent.com", // Replace with your Google Client ID
+                client_id: "YOUR_GOOGLE_CLIENT_ID_HERE.apps.googleusercontent.com", // Replace with your Google Client ID
                 callback: handleGoogleSignInResponse
             });
 
@@ -374,7 +324,7 @@
             currentUser = {
                 email: responsePayload.email,
                 name: responsePayload.name,
-                role: "Verified Gmail User",
+                role: "Verified Google User",
                 badge: "bg-blue-500/20 text-blue-300 border-blue-500/30"
             };
 
@@ -426,17 +376,14 @@
             const indicator = document.getElementById('device-indicator');
             const icon = document.getElementById('device-icon');
             const text = document.getElementById('device-text');
-            const statusMode = document.getElementById('status-device-mode');
 
             indicator.classList.remove('hidden');
             if (isMobile) {
                 icon.innerHTML = `<i class="fa-solid fa-mobile-screen-button"></i>`;
                 text.textContent = "Mobile UI Active";
-                if (statusMode) statusMode.textContent = "Mobile Optimized";
             } else {
                 icon.innerHTML = `<i class="fa-solid fa-desktop"></i>`;
                 text.textContent = "Desktop UI Active";
-                if (statusMode) statusMode.textContent = "Desktop Workstation";
             }
         }
 
@@ -455,55 +402,6 @@
                 }
             }
         });
-
-        function switchAuthTab(mode) {
-            const testerTab = document.getElementById('tab-tester');
-            const guestTab = document.getElementById('tab-guest');
-            const testerForm = document.getElementById('form-tester');
-            const guestForm = document.getElementById('form-guest');
-
-            if (mode === 'tester') {
-                testerTab.className = "py-2.5 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow transition-all";
-                guestTab.className = "py-2.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition-all";
-                testerForm.classList.remove('hidden');
-                guestForm.classList.add('hidden');
-            } else {
-                guestTab.className = "py-2.5 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow transition-all";
-                testerTab.className = "py-2.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition-all";
-                guestForm.classList.remove('hidden');
-                testerForm.classList.add('hidden');
-            }
-        }
-
-        function handleTesterLogin() {
-            const email = document.getElementById('login-email').value.trim().toLowerCase();
-            const pass = document.getElementById('login-password').value.trim();
-            const rememberMe = document.getElementById('remember-me').checked;
-            const errorDiv = document.getElementById('login-error');
-
-            if (USERS[email] && USERS[email].pass === pass) {
-                currentUser = { email, ...USERS[email] };
-                if (rememberMe) {
-                    localStorage.setItem('smart_planner_session', JSON.stringify(currentUser));
-                }
-                loadUserData();
-                initApp();
-            } else {
-                errorDiv.textContent = "Invalid email or password. Access denied.";
-                errorDiv.classList.remove('hidden');
-            }
-        }
-
-        function handleAnonymousGuestLogin() {
-            currentUser = { 
-                email: "anonymous.guest@smartplanner.id", 
-                name: "Anonymous Reviewer", 
-                role: "Public Guest", 
-                badge: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30" 
-            };
-            loadUserData();
-            initApp();
-        }
 
         function initApp() {
             document.getElementById('auth-modal').classList.add('hidden');
@@ -527,10 +425,6 @@
             localStorage.removeItem('smart_planner_session');
             document.getElementById('app-container').classList.add('hidden');
             document.getElementById('auth-modal').classList.remove('hidden');
-            document.getElementById('login-email').value = '';
-            document.getElementById('login-password').value = '';
-            document.getElementById('login-error').classList.add('hidden');
-            document.getElementById('remember-me').checked = false;
         }
 
         function renderTasks() {
@@ -662,69 +556,3 @@
                 if (t.completed) return false;
                 const diff = new Date(t.deadline) - now;
                 return diff > 0 && diff <= 48 * 60 * 60 * 1000;
-            }).length;
-
-            document.getElementById('stat-active-deadlines').textContent = active;
-            document.getElementById('stat-workload-score').textContent = totalHours + ' hrs';
-            document.getElementById('stat-due-soon').textContent = dueSoon;
-            document.getElementById('stat-completed').textContent = completedCount;
-        }
-
-        function updateWeeklyWorkload() {
-            const days = [
-                { name: 'Mon', index: 1 },
-                { name: 'Tue', index: 2 },
-                { name: 'Wed', index: 3 },
-                { name: 'Thu', index: 4 },
-                { name: 'Fri', index: 5 },
-                { name: 'Sat', index: 6 },
-                { name: 'Sun', index: 0 }
-            ];
-            
-            const container = document.getElementById('weekly-workload-bars');
-            const activeTasks = tasks.filter(t => !t.completed);
-
-            const workloadMap = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
-            activeTasks.forEach(t => {
-                const dayOfWeek = new Date(t.deadline).getDay();
-                workloadMap[dayOfWeek] += t.hours;
-            });
-
-            container.innerHTML = days.map(d => {
-                const load = workloadMap[d.index];
-                const percent = Math.min(Math.round((load / 12) * 100), 100);
-                const color = load > 8 ? 'bg-rose-500' : load > 4 ? 'bg-amber-500' : 'bg-indigo-500';
-
-                return `
-                    <div>
-                        <div class="flex justify-between text-xs mb-1">
-                            <span class="text-slate-300 font-medium">${d.name}</span>
-                            <span class="text-slate-400">${load} hrs</span>
-                        </div>
-                        <div class="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800">
-                            <div class="${color} h-full rounded-full transition-all duration-500" style="width: ${percent}%"></div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function runAiOptimization() {
-            const activeTasks = tasks.filter(t => !t.completed);
-            const totalHours = activeTasks.reduce((sum, t) => sum + t.hours, 0);
-            const aiText = document.getElementById('ai-guardian-text');
-
-            if (activeTasks.length === 0) {
-                aiText.textContent = "All tasks completed! Your schedule is completely clear and balanced.";
-                return;
-            }
-
-            if (totalHours > 15) {
-                aiText.textContent = `High workload detected (${totalHours} hours pending). AI recommends postponing non-critical tasks and prioritizing high-priority deadlines for optimal productivity.`;
-            } else {
-                aiText.textContent = `Workload is well-balanced (${totalHours} hours pending). You have sufficient capacity to complete upcoming milestones without burnout risk.`;
-            }
-        }
-    </script>
-</body>
-</html>
