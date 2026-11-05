@@ -35,8 +35,16 @@
             <div class="space-y-4 text-center py-2">
                 <p class="text-xs text-slate-300 leading-relaxed mb-4">Sign in securely with your official Google account to sync your workload and statistics across all your devices.</p>
                 
-                <!-- Official Google Sign In Button Container -->
-                <div id="google-signin-btn" class="flex justify-center py-2"></div>
+                <!-- Custom Reliable Google Sign-In Button -->
+                <button onclick="handleGoogleLoginClick()" class="w-full bg-white hover:bg-slate-100 text-slate-900 font-semibold py-3 px-4 rounded-xl transition-all shadow-md flex items-center justify-center gap-3">
+                    <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
+                        <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.13 0-5.78-2.11-6.73-4.96H1.18v3.15C3.17 21.32 7.23 24 12 24z"/>
+                        <path fill="#FBBC05" d="M5.27 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.6H1.18C.43 8.13 0 9.87 0 11.7s.43 3.57 1.18 5.1l4.09-2.56z"/>
+                        <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.23 0 3.17 2.68 1.18 6.6l4.09 3.15c.95-2.85 3.6-4.96 6.73-4.96z"/>
+                    </svg>
+                    <span class="text-xs">Sign in with Google</span>
+                </button>
             </div>
         </div>
     </div>
@@ -302,45 +310,51 @@
         let currentUser = null;
         let tasks = [];
         let historyTasks = [];
+        let tokenClient;
 
-        // Initialize Google Identity Services on window load
+        // Initialize Google Identity Services Token Client
         window.onload = function () {
-            google.accounts.id.initialize({
-                client_id: "1058756730435-0b1h2tmegb4b0r2jhb9kpjngjp6egois.apps.googleusercontent.com", // Replace with your Google Client ID
-                callback: handleGoogleSignInResponse
-            });
-
-            // Render official Google Sign-In button
-            google.accounts.id.renderButton(
-                document.getElementById("google-signin-btn"),
-                { theme: "outline", size: "large", width: "100%", shape: "pill" }
-            );
+            if (typeof google !== 'undefined' && google.accounts) {
+                tokenClient = google.accounts.oauth2.initTokenClient({
+                    client_id: "1058756730435-0b1h2tmegb4b0r2jhb9kpjngjp6egois.apps.googleusercontent.com", // Replace with your actual Google Client ID
+                    scope: 'email profile',
+                    callback: (response) => {
+                        if (response && response.access_token) {
+                            fetchUserProfile(response.access_token);
+                        }
+                    }
+                });
+            }
         };
 
-        // Handle Google OAuth JWT Credential Response
-        function handleGoogleSignInResponse(response) {
-            const responsePayload = parseJwt(response.credential);
-            
-            currentUser = {
-                email: responsePayload.email,
-                name: responsePayload.name,
-                role: "Verified Google User",
-                badge: "bg-blue-500/20 text-blue-300 border-blue-500/30"
-            };
-
-            localStorage.setItem('smart_planner_session', JSON.stringify(currentUser));
-            loadUserData();
-            initApp();
+        // Trigger Google Login Popup
+        function handleGoogleLoginClick() {
+            if (tokenClient) {
+                tokenClient.requestAccessToken();
+            } else {
+                alert("Google Sign-In is still initializing or blocked. Please check your connection.");
+            }
         }
 
-        // Helper function to decode Google JWT token securely
-        function parseJwt(token) {
-            var base64Url = token.split('.')[1];
-            var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            var jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-                return '%' + ('0' + c.charCodeAt(0).toString(16)).slice(-2);
-            }).join(''));
-            return JSON.parse(jsonPayload);
+        // Fetch user profile using the access token
+        function fetchUserProfile(accessToken) {
+            fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                headers: { 'Authorization': `Bearer ${accessToken}` }
+            })
+            .then(res => res.json())
+            .then(data => {
+                currentUser = {
+                    email: data.email,
+                    name: data.name,
+                    role: "Verified Google User",
+                    badge: "bg-blue-500/20 text-blue-300 border-blue-500/30"
+                };
+
+                localStorage.setItem('smart_planner_session', JSON.stringify(currentUser));
+                loadUserData();
+                initApp();
+            })
+            .catch(err => console.error("Failed to fetch user profile:", err));
         }
 
         function getStorageKey(suffix) {
@@ -556,3 +570,69 @@
                 if (t.completed) return false;
                 const diff = new Date(t.deadline) - now;
                 return diff > 0 && diff <= 48 * 60 * 60 * 1000;
+            }).length;
+
+            document.getElementById('stat-active-deadlines').textContent = active;
+            document.getElementById('stat-workload-score').textContent = totalHours + ' hrs';
+            document.getElementById('stat-due-soon').textContent = dueSoon;
+            document.getElementById('stat-completed').textContent = completedCount;
+        }
+
+        function updateWeeklyWorkload() {
+            const days = [
+                { name: 'Mon', index: 1 },
+                { name: 'Tue', index: 2 },
+                { name: 'Wed', index: 3 },
+                { name: 'Thu', index: 4 },
+                { name: 'Fri', index: 5 },
+                { name: 'Sat', index: 6 },
+                { name: 'Sun', index: 0 }
+            ];
+            
+            const container = document.getElementById('weekly-workload-bars');
+            const activeTasks = tasks.filter(t => !t.completed);
+
+            const workloadMap = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+            activeTasks.forEach(t => {
+                const dayOfWeek = new Date(t.deadline).getDay();
+                workloadMap[dayOfWeek] += t.hours;
+            });
+
+            container.innerHTML = days.map(d => {
+                const load = workloadMap[d.index];
+                const percent = Math.min(Math.round((load / 12) * 100), 100);
+                const color = load > 8 ? 'bg-rose-500' : load > 4 ? 'bg-amber-500' : 'bg-indigo-500';
+
+                return `
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-slate-300 font-medium">${d.name}</span>
+                            <span class="text-slate-400">${load} hrs</span>
+                        </div>
+                        <div class="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800">
+                            <div class="${color} h-full rounded-full transition-all duration-500" style="width: ${percent}%"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function runAiOptimization() {
+            const activeTasks = tasks.filter(t => !t.completed);
+            const totalHours = activeTasks.reduce((sum, t) => sum + t.hours, 0);
+            const aiText = document.getElementById('ai-guardian-text');
+
+            if (activeTasks.length === 0) {
+                aiText.textContent = "All tasks completed! Your schedule is completely clear and balanced.";
+                return;
+            }
+
+            if (totalHours > 15) {
+                aiText.textContent = `High workload detected (${totalHours} hours pending). AI recommends postponing non-critical tasks and prioritizing high-priority deadlines for optimal productivity.`;
+            } else {
+                aiText.textContent = `Workload is well-balanced (${totalHours} hours pending). You have sufficient capacity to complete upcoming milestones without burnout risk.`;
+            }
+        }
+    </script>
+</body>
+</html>
