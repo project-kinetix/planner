@@ -16,19 +16,19 @@
         body { font-family: 'Inter', sans-serif; }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-emerald-500 selection:text-white">
 
     <!-- AUTHENTICATION OVERLAY / LOGIN MODAL -->
     <div id="auth-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-4">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 sm:p-8 shadow-2xl relative overflow-hidden">
-            <div class="absolute -top-24 -right-24 w-48 h-48 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute -top-24 -right-24 w-48 h-48 bg-emerald-600/20 rounded-full blur-3xl pointer-events-none"></div>
             
             <div class="text-center mb-6">
-                <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 mb-4 text-2xl shadow-inner">
+                <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-600/10 border border-emerald-500/20 text-emerald-400 mb-4 text-2xl shadow-inner">
                     <i class="fa-solid fa-brain"></i>
                 </div>
                 <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-white">Smart Deadline Planner</h1>
-                <p class="text-xs text-indigo-400 font-medium mt-1">by Kinetix • IDT Project Demo</p>
+                <p class="text-xs text-emerald-400 font-medium mt-1">by Kinetix • IDT Project Demo</p>
             </div>
 
             <!-- Google Sign-In View -->
@@ -52,28 +52,56 @@
     <!-- MAIN APP CONTAINER -->
     <div id="app-container" class="hidden flex-1 flex flex-col">
         <!-- Top Navigation Bar -->
-        <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-40 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2">
-            <div class="flex items-center gap-2 sm:gap-3 min-w-0">
-                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-indigo-600/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0">
-                    <i class="fa-solid fa-brain"></i>
-                </div>
-                <div class="min-w-0">
-                    <h1 class="font-bold text-xs sm:text-base tracking-tight text-white flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                        <span class="truncate">Smart Deadline Planner</span>
-                        <span class="text-[10px] sm:text-xs font-medium text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-1.5 sm:px-2 py-0.5 rounded-md">by Kinetix</span>
-                    </h1>
-                    <div class="flex items-center gap-2 mt-0.5">
-                        <span id="role-badge" class="text-[9px] sm:text-[10px] uppercase tracking-wider px-2 py-0.2 rounded-full font-semibold border"></span>
+        <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-40 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2 relative">
+            
+            <!-- Logo Dropdown Container -->
+            <div class="relative" id="logo-dropdown-container">
+                <button onclick="toggleStatusDropdown()" class="flex items-center gap-2 sm:gap-3 min-w-0 hover:opacity-80 transition-opacity focus:outline-none">
+                    <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white border border-slate-300 flex items-center justify-center text-slate-900 shrink-0 shadow-sm">
+                        <i class="fa-solid fa-layer-group text-lg"></i>
                     </div>
+                    <div class="min-w-0 text-left">
+                        <h1 class="font-bold text-xs sm:text-base tracking-tight text-white flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                            <span class="truncate">Smart Deadline Planner</span>
+                            <span class="text-[10px] sm:text-xs font-medium text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 sm:px-2 py-0.5 rounded-md">by Kinetix</span>
+                            <i class="fa-solid fa-chevron-down text-[10px] text-slate-400 ml-1"></i>
+                        </h1>
+                        <div class="flex items-center gap-2 mt-0.5">
+                            <span id="role-badge" class="text-[9px] sm:text-[10px] uppercase tracking-wider px-2 py-0.2 rounded-full font-semibold border text-white"></span>
+                        </div>
+                    </div>
+                </button>
+
+                <!-- Hidden Dropdown Menu (IDT System Status) -->
+                <div id="status-dropdown" class="hidden absolute top-full left-0 mt-3 w-64 bg-slate-800 border border-slate-700 rounded-2xl shadow-xl z-50 p-4">
+                    <h3 class="font-bold text-white text-xs uppercase tracking-wider flex items-center gap-2 mb-3">
+                        <i class="fa-solid fa-shield-halved text-emerald-400"></i>
+                        IDT System Status
+                    </h3>
+                    <ul class="space-y-2 text-xs text-slate-300">
+                        <li class="flex items-center justify-between py-1 border-b border-slate-700/60">
+                            <span>Algorithmic Balance</span>
+                            <span class="text-emerald-400 font-medium">Optimal</span>
+                        </li>
+                        <li class="flex items-center justify-between py-1 border-b border-slate-700/60">
+                            <span>Google OAuth</span>
+                            <span class="text-blue-400 font-medium">Verified Active</span>
+                        </li>
+                        <li class="flex items-center justify-between py-1">
+                            <span>Storage Sync</span>
+                            <span class="text-white font-medium">LocalStorage</span>
+                        </li>
+                    </ul>
                 </div>
             </div>
 
+            <!-- User Info & Logout -->
             <div class="flex items-center gap-3 shrink-0">
                 <div class="text-right hidden md:block">
                     <div id="user-display-name" class="text-xs font-medium text-slate-200"></div>
                     <div id="user-display-email" class="text-[10px] text-slate-400"></div>
                 </div>
-                <button onclick="logout()" class="bg-slate-800 hover:bg-rose-600/20 hover:text-rose-400 hover:border-rose-500/30 text-slate-300 border border-slate-700 px-2.5 sm:px-3 py-2 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5 sm:gap-2" title="Switch User / Logout">
+                <button onclick="logout()" class="bg-slate-800 hover:bg-orange-500/20 hover:text-orange-400 hover:border-orange-500/30 text-slate-300 border border-slate-700 px-2.5 sm:px-3 py-2 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5 sm:gap-2" title="Switch User / Logout">
                     <i class="fa-solid fa-right-from-bracket"></i>
                     <span class="hidden sm:inline">Logout</span>
                 </button>
@@ -83,23 +111,23 @@
         <!-- Main Dashboard Content -->
         <main class="max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6 flex-1">
 
-            <!-- AI Guardian Banner -->
-            <div class="bg-gradient-to-r from-indigo-950/60 via-slate-900 to-slate-900 border border-indigo-500/30 rounded-2xl p-4 sm:p-5 shadow-xl relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                <div class="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            <!-- AI Organizer Banner -->
+            <div class="bg-gradient-to-r from-emerald-950/60 via-slate-900 to-slate-900 border border-emerald-500/30 rounded-2xl p-4 sm:p-5 shadow-xl relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div class="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
                 <div class="flex items-start gap-3 sm:gap-4">
-                    <div class="p-2.5 sm:p-3 bg-indigo-600/20 border border-indigo-500/30 rounded-xl text-indigo-400 text-lg sm:text-xl shrink-0 mt-0.5">
-                        <i class="fa-solid fa-sparkles"></i>
+                    <div class="p-2.5 sm:p-3 bg-white/10 border border-white/20 rounded-xl text-white text-lg sm:text-xl shrink-0 mt-0.5 shadow-inner">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
                     </div>
                     <div>
                         <h2 class="text-xs sm:text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2 flex-wrap">
-                            <span>AI Workload Guardian</span>
-                            <span class="bg-indigo-500/20 text-indigo-300 text-[10px] px-2 py-0.5 rounded font-medium border border-indigo-500/30">Active Analysis</span>
+                            <span>ORGANIZE USING AI</span>
+                            <span class="bg-orange-500/20 text-orange-400 text-[10px] px-2 py-0.5 rounded font-medium border border-orange-500/30">Under Development</span>
                         </h2>
                         <p id="ai-guardian-text" class="text-xs text-slate-300 mt-1 leading-relaxed">Analyzing your task distribution and upcoming deadlines...</p>
                     </div>
                 </div>
-                <button onclick="runAiOptimization()" class="w-full md:w-auto bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 sm:py-2 rounded-xl text-xs font-semibold transition-all shadow-md shadow-indigo-600/20 shrink-0 flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <button onclick="runAiOptimization()" class="w-full md:w-auto bg-orange-500 hover:bg-orange-400 text-white px-4 py-2.5 sm:py-2 rounded-xl text-xs font-semibold transition-all shadow-md shadow-orange-500/20 shrink-0 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-bolt"></i>
                     <span>Optimize Schedule</span>
                 </button>
             </div>
@@ -108,25 +136,25 @@
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm">
                     <div class="flex items-center justify-between text-slate-400 mb-2 sm:mb-3">
-                        <span class="text-[10px] sm:text-xs font-medium uppercase tracking-wider truncate">Active Deadlines</span>
-                        <div class="p-1.5 sm:p-2 bg-indigo-500/10 text-indigo-400 rounded-xl"><i class="fa-solid fa-clock"></i></div>
+                        <span class="text-[10px] sm:text-xs font-medium uppercase tracking-wider truncate text-white">Active Deadlines</span>
+                        <div class="p-1.5 sm:p-2 bg-emerald-500/10 text-emerald-400 rounded-xl"><i class="fa-solid fa-clock"></i></div>
                     </div>
-                    <div id="stat-active-deadlines" class="text-xl sm:text-2xl font-bold text-white">0</div>
+                    <div id="stat-active-deadlines" class="text-xl sm:text-2xl font-bold text-emerald-400">0</div>
                     <div class="text-[10px] sm:text-[11px] text-slate-400 mt-1">Pending completion</div>
                 </div>
 
                 <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm">
                     <div class="flex items-center justify-between text-slate-400 mb-2 sm:mb-3">
-                        <span class="text-[10px] sm:text-xs font-medium uppercase tracking-wider truncate">Workload Score</span>
-                        <div class="p-1.5 sm:p-2 bg-amber-500/10 text-amber-400 rounded-xl"><i class="fa-solid fa-gauge-high"></i></div>
+                        <span class="text-[10px] sm:text-xs font-medium uppercase tracking-wider truncate text-white">Workload Score</span>
+                        <div class="p-1.5 sm:p-2 bg-orange-500/10 text-orange-400 rounded-xl"><i class="fa-solid fa-layer-group"></i></div>
                     </div>
-                    <div id="stat-workload-score" class="text-xl sm:text-2xl font-bold text-white">0 hrs</div>
+                    <div id="stat-workload-score" class="text-xl sm:text-2xl font-bold text-orange-400">0 hrs</div>
                     <div class="text-[10px] sm:text-[11px] text-slate-400 mt-1">Total estimated effort</div>
                 </div>
 
                 <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm">
                     <div class="flex items-center justify-between text-slate-400 mb-2 sm:mb-3">
-                        <span class="text-[10px] sm:text-xs font-medium uppercase tracking-wider truncate">Due Today / Soon</span>
+                        <span class="text-[10px] sm:text-xs font-medium uppercase tracking-wider truncate text-white">Due Today</span>
                         <div class="p-1.5 sm:p-2 bg-rose-500/10 text-rose-400 rounded-xl"><i class="fa-solid fa-triangle-exclamation"></i></div>
                     </div>
                     <div id="stat-due-soon" class="text-xl sm:text-2xl font-bold text-white">0</div>
@@ -135,33 +163,49 @@
 
                 <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm">
                     <div class="flex items-center justify-between text-slate-400 mb-2 sm:mb-3">
-                        <span class="text-[10px] sm:text-xs font-medium uppercase tracking-wider truncate">Completed</span>
-                        <div class="p-1.5 sm:p-2 bg-emerald-500/10 text-emerald-400 rounded-xl"><i class="fa-solid fa-circle-check"></i></div>
+                        <span class="text-[10px] sm:text-xs font-medium uppercase tracking-wider truncate text-white">Completed</span>
+                        <div class="p-1.5 sm:p-2 bg-white/10 text-white rounded-xl"><i class="fa-solid fa-check"></i></div>
                     </div>
                     <div id="stat-completed" class="text-xl sm:text-2xl font-bold text-white">0</div>
                     <div class="text-[10px] sm:text-[11px] text-slate-400 mt-1">Successfully finished</div>
                 </div>
             </div>
 
-            <!-- Main Workspace Grid -->
+            <!-- Main Workspace Grid (Reordered: Left Workload, Right Tasks) -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
                 
-                <!-- Left 2 Cols: Task Management -->
+                <!-- Left Col: Weekly Workload (Now col-span-1) -->
+                <div class="space-y-4 sm:space-y-6 lg:col-span-1">
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-bold text-white text-xs sm:text-sm uppercase tracking-wider flex items-center gap-2">
+                                <i class="fa-solid fa-chart-bar text-orange-400"></i>
+                                Weekly Workload
+                            </h3>
+                            <span id="weekly-reset-status" class="text-[10px] text-slate-400">Resets Sun 12 AM</span>
+                        </div>
+                        <div id="weekly-workload-bars" class="space-y-3">
+                            <!-- Populated via JavaScript -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right 2 Cols: Task Management (Now col-span-2) -->
                 <div class="lg:col-span-2 space-y-4">
                     <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm">
                         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-5">
                             <h3 class="font-bold text-white text-xs sm:text-sm uppercase tracking-wider flex items-center gap-2">
-                                <i class="fa-solid fa-list-check text-indigo-400"></i>
+                                <i class="fa-solid fa-list-check text-emerald-400"></i>
                                 Task & Deadline Queue
                             </h3>
                             <div class="flex items-center gap-2 w-full sm:w-auto">
-                                <button onclick="openHistoryModal()" class="flex-1 sm:flex-none bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-3 py-2.5 sm:py-2 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5" title="Review Previous Day Tasks">
-                                    <i class="fa-solid fa-clock-rotate-left text-indigo-400"></i>
-                                    <span>Check Previous Tasks</span>
+                                <button onclick="openHistoryModal()" class="flex-1 sm:flex-none bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 px-3 py-2.5 sm:py-2 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5" title="Review Previous Day Tasks">
+                                    <i class="fa-solid fa-clock-rotate-left text-slate-400"></i>
+                                    <span>History</span>
                                 </button>
-                                <button onclick="openTaskModal()" class="flex-1 sm:flex-none bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 sm:py-2 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2 shadow-sm">
+                                <button onclick="openTaskModal()" class="flex-1 sm:flex-none bg-emerald-500 hover:bg-emerald-400 text-slate-900 px-4 py-2.5 sm:py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-sm">
                                     <i class="fa-solid fa-plus"></i>
-                                    <span>Add New Task</span>
+                                    <span>Add Task</span>
                                 </button>
                             </div>
                         </div>
@@ -170,9 +214,9 @@
                         <div class="flex flex-col sm:flex-row gap-3 mb-4">
                             <div class="relative flex-1">
                                 <i class="fa-solid fa-search absolute left-3.5 top-3 text-slate-500 text-xs"></i>
-                                <input type="text" id="task-search" oninput="renderTasks()" placeholder="Search tasks by title..." class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-4 py-2.5 sm:py-2 text-xs text-white focus:outline-none focus:border-indigo-500">
+                                <input type="text" id="task-search" oninput="renderTasks()" placeholder="Search tasks by title..." class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-4 py-2.5 sm:py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
                             </div>
-                            <select id="task-filter-category" onchange="renderTasks()" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 sm:py-2 text-xs text-slate-300 focus:outline-none focus:border-indigo-500">
+                            <select id="task-filter-category" onchange="renderTasks()" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 sm:py-2 text-xs text-slate-300 focus:outline-none focus:border-emerald-500">
                                 <option value="all">All Categories</option>
                                 <option value="Academic">Academic</option>
                                 <option value="Development">Development</option>
@@ -188,50 +232,13 @@
                     </div>
                 </div>
 
-                <!-- Right Col: Weekly Workload & Breakdown -->
-                <div class="space-y-4 sm:space-y-6">
-                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="font-bold text-white text-xs sm:text-sm uppercase tracking-wider flex items-center gap-2">
-                                <i class="fa-solid fa-chart-bar text-indigo-400"></i>
-                                Weekly Workload
-                            </h3>
-                            <span id="weekly-reset-status" class="text-[10px] text-slate-400">Resets Sun 12 AM</span>
-                        </div>
-                        <div id="weekly-workload-bars" class="space-y-3">
-                            <!-- Populated via JavaScript -->
-                        </div>
-                    </div>
-
-                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm">
-                        <h3 class="font-bold text-white text-xs sm:text-sm uppercase tracking-wider flex items-center gap-2 mb-3">
-                            <i class="fa-solid fa-shield-halved text-emerald-400"></i>
-                            IDT System Status
-                        </h3>
-                        <ul class="space-y-2 text-xs text-slate-400">
-                            <li class="flex items-center justify-between py-1 border-b border-slate-800/60">
-                                <span>Algorithmic Balance</span>
-                                <span class="text-emerald-400 font-medium">Optimal</span>
-                            </li>
-                            <li class="flex items-center justify-between py-1 border-b border-slate-800/60">
-                                <span>Google OAuth</span>
-                                <span class="text-blue-400 font-medium">Verified Active</span>
-                            </li>
-                            <li class="flex items-center justify-between py-1">
-                                <span>Storage Sync</span>
-                                <span class="text-slate-300 font-medium">LocalStorage</span>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-
             </div>
         </main>
     </div>
 
     <!-- FLOATING DEVICE MODE INDICATOR (Bottom Right) -->
     <div id="device-indicator" class="fixed bottom-4 right-4 z-30 hidden bg-slate-900/90 border border-slate-800 backdrop-blur px-3 py-1.5 rounded-full shadow-lg text-[11px] flex items-center gap-2 text-slate-300">
-        <span id="device-icon" class="text-indigo-400"><i class="fa-solid fa-desktop"></i></span>
+        <span id="device-icon" class="text-emerald-400"><i class="fa-solid fa-desktop"></i></span>
         <span id="device-text">Desktop Mode</span>
     </div>
 
@@ -246,12 +253,12 @@
                 <input type="hidden" id="task-id">
                 <div>
                     <label class="block text-xs font-medium text-slate-300 mb-1">Task Title</label>
-                    <input type="text" id="form-title" required placeholder="e.g. IDT Project Documentation" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+                    <input type="text" id="form-title" required placeholder="e.g. IDT Project Documentation" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500">
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-medium text-slate-300 mb-1">Category</label>
-                        <select id="form-category" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-slate-300 focus:outline-none focus:border-indigo-500">
+                        <select id="form-category" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-slate-300 focus:outline-none focus:border-emerald-500">
                             <option value="Academic">Academic</option>
                             <option value="Development">Development</option>
                             <option value="Research">Research</option>
@@ -260,17 +267,17 @@
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-slate-300 mb-1">Estimated Hours</label>
-                        <input type="number" id="form-hours" min="1" max="40" value="4" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+                        <input type="number" id="form-hours" min="1" max="40" value="4" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500">
                     </div>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-medium text-slate-300 mb-1">Deadline Date & Time</label>
-                        <input type="datetime-local" id="form-deadline" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+                        <input type="datetime-local" id="form-deadline" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-slate-300 mb-1">Priority Level</label>
-                        <select id="form-priority" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-slate-300 focus:outline-none focus:border-indigo-500">
+                        <select id="form-priority" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-slate-300 focus:outline-none focus:border-emerald-500">
                             <option value="High">High Priority</option>
                             <option value="Medium" selected>Medium Priority</option>
                             <option value="Low">Low Priority</option>
@@ -278,8 +285,8 @@
                     </div>
                 </div>
                 <div class="flex justify-end gap-3 pt-2">
-                    <button type="button" onclick="closeTaskModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2.5 sm:py-2 rounded-xl text-xs font-semibold transition-all">Cancel</button>
-                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 sm:py-2 rounded-xl text-xs font-semibold transition-all shadow-md shadow-indigo-600/25">Save Task</button>
+                    <button type="button" onclick="closeTaskModal()" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2.5 sm:py-2 rounded-xl text-xs font-semibold transition-all">Cancel</button>
+                    <button type="submit" class="bg-emerald-500 hover:bg-emerald-400 text-slate-900 px-5 py-2.5 sm:py-2 rounded-xl text-xs font-bold transition-all shadow-md">Save Task</button>
                 </div>
             </form>
         </div>
@@ -290,7 +297,7 @@
         <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-5 sm:p-6 shadow-2xl flex flex-col max-h-[85vh]">
             <div class="flex items-center justify-between mb-4 shrink-0">
                 <h3 class="font-bold text-white text-sm sm:text-base flex items-center gap-2">
-                    <i class="fa-solid fa-clock-rotate-left text-indigo-400"></i>
+                    <i class="fa-solid fa-clock-rotate-left text-orange-400"></i>
                     Previous Day's Tasks
                 </h3>
                 <button onclick="closeHistoryModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
@@ -300,7 +307,7 @@
                 <!-- Populated via JavaScript -->
             </div>
             <div class="pt-4 mt-2 border-t border-slate-800 text-right shrink-0">
-                <button onclick="closeHistoryModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-xl text-xs font-semibold transition-all">Close</button>
+                <button onclick="closeHistoryModal()" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-xl text-xs font-semibold transition-all">Close</button>
             </div>
         </div>
     </div>
@@ -311,6 +318,19 @@
         let tasks = [];
         let historyTasks = [];
         let tokenClient;
+
+        // Dropdown toggle logic and click-outside listener
+        function toggleStatusDropdown() {
+            document.getElementById('status-dropdown').classList.toggle('hidden');
+        }
+
+        document.addEventListener('click', (e) => {
+            const dropdown = document.getElementById('status-dropdown');
+            const container = document.getElementById('logo-dropdown-container');
+            if (container && !container.contains(e.target) && !dropdown.classList.contains('hidden')) {
+                dropdown.classList.add('hidden');
+            }
+        });
 
         // Initialize Google Identity Services Token Client
         window.onload = function () {
@@ -346,8 +366,8 @@
                 currentUser = {
                     email: data.email,
                     name: data.name,
-                    role: "Verified Google User",
-                    badge: "bg-blue-500/20 text-blue-300 border-blue-500/30"
+                    role: "USER", // Updated to just USER
+                    badge: "bg-white/10 text-white border-white/20" // Sleek neutral badge for header
                 };
 
                 localStorage.setItem('smart_planner_session', JSON.stringify(currentUser));
@@ -453,25 +473,25 @@
             });
 
             if (filtered.length === 0) {
-                container.innerHTML = `<div class="text-center py-12 text-slate-500 text-xs">No active tasks for today. Click 'Add New Task' to start.</div>`;
+                container.innerHTML = `<div class="text-center py-12 text-slate-500 text-xs">No active tasks for today. Click 'Add Task' to start.</div>`;
                 return;
             }
 
             container.innerHTML = filtered.map(t => `
                 <div class="bg-slate-950 border ${t.completed ? 'border-slate-800/40 opacity-60' : 'border-slate-800'} rounded-xl p-3.5 sm:p-4 flex items-center justify-between gap-3 transition-all hover:border-slate-700">
                     <div class="flex items-center gap-3 min-w-0">
-                        <input type="checkbox" ${t.completed ? 'checked' : ''} onchange="toggleTask(${t.id})" class="w-4 h-4 rounded bg-slate-900 border-slate-700 text-indigo-600 focus:ring-0 cursor-pointer shrink-0">
+                        <input type="checkbox" ${t.completed ? 'checked' : ''} onchange="toggleTask(${t.id})" class="w-4 h-4 rounded bg-slate-900 border-slate-700 text-emerald-500 focus:ring-0 cursor-pointer shrink-0">
                         <div class="min-w-0">
                             <h4 class="text-xs font-semibold text-white truncate ${t.completed ? 'line-through text-slate-400' : ''}">${t.title}</h4>
                             <div class="flex items-center gap-2 mt-1 text-[10px] text-slate-400 flex-wrap">
                                 <span class="px-2 py-0.5 rounded bg-slate-900 border border-slate-800">${t.category}</span>
-                                <span><i class="fa-solid fa-clock text-indigo-400"></i> ${t.hours} hrs</span>
+                                <span><i class="fa-solid fa-clock text-orange-400"></i> ${t.hours} hrs</span>
                                 <span><i class="fa-solid fa-calendar text-slate-500"></i> ${new Date(t.deadline).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})}</span>
                             </div>
                         </div>
                     </div>
                     <div class="flex items-center gap-2 shrink-0">
-                        <span class="text-[9px] sm:text-[10px] px-2 py-0.5 rounded font-medium ${t.priority === 'High' ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' : t.priority === 'Medium' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'}">${t.priority}</span>
+                        <span class="text-[9px] sm:text-[10px] px-2 py-0.5 rounded font-medium ${t.priority === 'High' ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' : t.priority === 'Medium' ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'}">${t.priority}</span>
                         <button onclick="deleteTask(${t.id})" class="text-slate-500 hover:text-rose-400 p-1.5 transition-colors" title="Delete Task"><i class="fa-solid fa-trash text-xs"></i></button>
                     </div>
                 </div>
@@ -515,8 +535,8 @@
                             <h4 class="text-xs font-semibold text-white truncate">${h.title}</h4>
                             <div class="flex items-center gap-2 mt-1 text-[10px] text-slate-400 flex-wrap">
                                 <span class="px-2 py-0.5 rounded bg-slate-900 border border-slate-800">${h.category}</span>
-                                <span><i class="fa-solid fa-clock text-indigo-400"></i> ${h.hours} hrs</span>
-                                <span class="text-indigo-300">Archived: ${h.archivedDate || 'Previous Day'}</span>
+                                <span><i class="fa-solid fa-clock text-emerald-400"></i> ${h.hours} hrs</span>
+                                <span class="text-orange-300">Archived: ${h.archivedDate || 'Previous Day'}</span>
                             </div>
                         </div>
                         <span class="text-[9px] px-2 py-0.5 rounded font-medium ${h.completed ? 'bg-emerald-500/10 text-emerald-400' : 'bg-slate-800 text-slate-400'}">${h.completed ? 'Completed' : 'Expired'}</span>
@@ -601,7 +621,8 @@
             container.innerHTML = days.map(d => {
                 const load = workloadMap[d.index];
                 const percent = Math.min(Math.round((load / 12) * 100), 100);
-                const color = load > 8 ? 'bg-rose-500' : load > 4 ? 'bg-amber-500' : 'bg-indigo-500';
+                // Updated colors for the new theme
+                const color = load > 8 ? 'bg-rose-500' : load > 4 ? 'bg-orange-500' : 'bg-emerald-500';
 
                 return `
                     <div>
