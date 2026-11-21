@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#4f46e5">
 <meta charset="utf-8">
 <title>Smart Deadline Planner • by Kinetix</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -334,6 +336,7 @@ label>*{margin-top:4px;font-weight:400}
         <b id="user-display-name"></b>
         <small id="user-display-email"></small>
       </div>
+      <button class="btn" id="updBtn">Updates</button>
       <button class="btn bell" id="bell" aria-pressed="true">Reminders on</button>
       <button class="btn" id="theme" aria-label="Switch light or dark theme">Theme</button>
       <button class="btn" id="histBtn">History</button>
@@ -415,6 +418,25 @@ label>*{margin-top:4px;font-weight:400}
   </form>
 </dialog>
 
+  <!-- APP UPDATES DIALOG -->
+<dialog id="updates-dlg">
+  <h3>App Updates</h3>
+  <p style="margin:0 0 12px;font-size:13px;color:var(--mu)">
+    Pulls the latest release directly from your GitHub repository—no APK reinstall needed.
+  </p>
+  <ul class="status-list" style="margin-bottom:14px">
+    <li><span>Installed Build</span><span id="upd-local" class="status-blue">Checking...</span></li>
+    <li><span>Latest on GitHub</span><span id="upd-remote">Checking...</span></li>
+    <li><span>Latest Change</span><span id="upd-msg" style="text-align:right;max-width:60%;font-size:12px">—</span></li>
+  </ul>
+  <div id="upd-status" style="font-size:13px;margin-bottom:12px;font-weight:600"></div>
+  <div class="fa">
+    <button type="button" class="btn" id="closeUpd">Close</button>
+    <button type="button" class="btn" id="checkUpdBtn">Check Now</button>
+    <button type="button" class="btn p hidden" id="installUpdBtn">Pull &amp; Apply Update</button>
+  </div>
+</dialog>
+
 <!-- PREVIOUS TASKS HISTORY DIALOG -->
 <dialog id="history-dlg">
   <h3>Previous Day's Tasks</h3>
@@ -441,6 +463,90 @@ let toastTimer = null;
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* --- Service Worker & Over-The-Air GitHub Updater --- */
+const GH_OWNER = 'kinetix-idt';
+const GH_REPO  = 'project-kinetix'; // Match your exact repo name
+const GH_BRANCH = 'main';
+const VER_KEY  = 'kinetix_installed_sha';
+let latestRemoteSha = null;
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(console.error);
+  });
+}
+
+async function checkGitHubUpdates() {
+  const localSha = localStorage.getItem(VER_KEY);
+  $('upd-local').textContent = localSha ? localSha.slice(0, 7) : 'Initial';
+  $('upd-remote').textContent = 'Fetching...';
+  $('upd-status').textContent = '';
+  $('installUpdBtn').classList.add('hidden');
+
+  try {
+    const res = await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/commits/${GH_BRANCH}`, {
+      cache: 'no-store'
+    });
+    if (!res.ok) throw new Error('GitHub API error ' + res.status);
+    const data = await res.json();
+    latestRemoteSha = data.sha;
+
+    const shortRemote = data.sha.slice(0, 7);
+    const commitDate = new Date(data.commit.committer.date).toLocaleString([], {
+      day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+    });
+
+    $('upd-remote').textContent = `${shortRemote} (${commitDate})`;
+    $('upd-msg').textContent = data.commit.message.split('\n')[0];
+
+    if (!localSha) {
+      localStorage.setItem(VER_KEY, latestRemoteSha);
+      $('upd-local').textContent = shortRemote;
+      $('upd-status').style.color = 'var(--lo)';
+      $('upd-status').textContent = 'You are running the latest version.';
+    } else if (localSha !== latestRemoteSha) {
+      $('upd-status').style.color = 'var(--md)';
+      $('upd-status').textContent = 'New update available on GitHub!';
+      $('installUpdBtn').classList.remove('hidden');
+    } else {
+      $('upd-status').style.color = 'var(--lo)';
+      $('upd-status').textContent = 'App is up to date.';
+    }
+  } catch (err) {
+    $('upd-remote').textContent = 'Offline / Error';
+    $('upd-status').style.color = 'var(--hi)';
+    $('upd-status').textContent = 'Could not reach GitHub. Check your connection.';
+  }
+}
+
+async function applyGitHubUpdate() {
+  $('installUpdBtn').textContent = 'Updating...';
+  try {
+    if (latestRemoteSha) localStorage.setItem(VER_KEY, latestRemoteSha);
+    // Clear all Service Worker caches so the browser pulls fresh index.html
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.update()));
+    }
+    // Cache-busting reload
+    window.location.href = window.location.pathname + '?v=' + Date.now();
+  } catch (e) {
+    window.location.reload();
+  }
+}
+
+$('updBtn').onclick = () => {
+  $('updates-dlg').showModal();
+  checkGitHubUpdates();
+};
+$('closeUpd').onclick = () => $('updates-dlg').close();
+$('checkUpdBtn').onclick = checkGitHubUpdates;
+$('installUpdBtn').onclick = applyGitHubUpdate;
 
 /* --- Dropdown Toggle --- */
 function toggleStatusDropdown() {
