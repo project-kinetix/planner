@@ -1,680 +1,979 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Deadline & Workload Planner - IDT Demo</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts: Inter -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Google Identity Services SDK -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-    </style>
+<meta charset="utf-8">
+<title>Smart Deadline Planner • by Kinetix</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=Figtree:wght@400;500;600&display=swap">
+<!-- Google Identity Services SDK -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+:root{
+  --bg:#eef1f6;--sf:#fff;--ink:#121a2b;--mu:#5b6679;--ln:#dde3ee;
+  --ac:#3d5afe;--acs:#e8ecff;--hi:#d92d3a;--md:#d97706;--lo:#10b981;
+  --d:'Bricolage Grotesque','Segoe UI',sans-serif;
+  --b:'Figtree','Segoe UI',system-ui,sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:light;
+}
+@media(prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0e1320;--sf:#171e30;--ink:#e8ecf5;--mu:#93a0b8;--ln:#26304a;
+    --ac:#7c91ff;--acs:#222c55;--hi:#ff6b75;--md:#f59e0b;--lo:#34d399;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0e1320;--sf:#171e30;--ink:#e8ecf5;--mu:#93a0b8;--ln:#26304a;
+  --ac:#7c91ff;--acs:#222c55;--hi:#ff6b75;--md:#f59e0b;--lo:#34d399;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{
+  margin:0;min-height:100vh;
+  background:
+    radial-gradient(800px 380px at 0 -60px,color-mix(in srgb,#ec4899 18%,transparent),transparent),
+    radial-gradient(800px 380px at 100% -60px,color-mix(in srgb,#4f46e5 22%,transparent),transparent) no-repeat,
+    var(--bg);
+  color:var(--ink);
+  font:400 15px/1.5 var(--b);
+}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--ac);outline-offset:2px}
+.hidden{display:none!important}
+
+/* Auth Overlay */
+.auth-overlay{
+  position:fixed;inset:0;z-index:50;
+  display:grid;place-items:center;padding:16px;
+  background:color-mix(in srgb,var(--bg) 88%,transparent);
+  backdrop-filter:blur(10px);
+}
+.auth-card{
+  width:min(420px,100%);background:var(--sf);
+  border:1px solid var(--ln);border-top:4px solid #4f46e5;
+  border-radius:20px;padding:30px 26px;text-align:center;
+  box-shadow:0 20px 50px rgba(0,0,0,.18);
+}
+.auth-logo{
+  width:56px;height:56px;margin:0 auto 14px;border-radius:16px;
+  background:linear-gradient(135deg,#4f46e5,#c026d3);color:#fff;
+  display:grid;place-items:center;font:800 24px var(--d);
+  box-shadow:0 8px 20px rgba(79,70,229,.3);
+}
+.auth-card h1{font:800 26px/1.1 var(--d);margin:0 0 6px}
+.auth-card .sub{margin:0 0 20px}
+.g-btn{
+  width:100%;display:flex;align-items:center;justify-content:center;gap:10px;
+  padding:12px 16px;border-radius:12px;border:1px solid var(--ln);
+  background:#fff;color:#121a2b;font-weight:600;cursor:pointer;
+  box-shadow:0 2px 6px rgba(0,0,0,.08);transition:transform .12s,box-shadow .12s;
+}
+.g-btn:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(0,0,0,.12)}
+
+/* Layout */
+.wrap{max-width:1160px;margin:0 auto;padding:20px 16px 84px}
+header{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:14px;flex-wrap:wrap;margin-bottom:20px;position:relative;
+}
+.brand-wrap{position:relative}
+.brand-btn{
+  display:flex;align-items:center;gap:12px;background:none;border:0;
+  padding:4px 6px 4px 0;cursor:pointer;text-align:left;border-radius:12px;
+}
+.brand-btn:hover .brand-mark{transform:scale(1.04)}
+.brand-mark{
+  width:42px;height:42px;border-radius:12px;flex-shrink:0;
+  background:linear-gradient(135deg,#4f46e5,#c026d3);color:#fff;
+  display:grid;place-items:center;font:800 18px var(--d);
+  transition:transform .15s;
+}
+h1.title{
+  font:800 clamp(22px,3.6vw,30px)/1.05 var(--d);margin:0;letter-spacing:-.02em;
+  background:linear-gradient(90deg,#4f46e5,#c026d3,#f97316);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+}
+.brand-meta{display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap}
+.pill{
+  font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+  padding:2px 8px;border-radius:999px;border:1px solid var(--ln);
+  background:var(--sf);color:var(--mu);
+}
+.pill.kinetix{color:var(--lo);border-color:color-mix(in srgb,var(--lo) 40%,var(--ln));background:color-mix(in srgb,var(--lo) 12%,var(--sf))}
+.pill.dev{color:#fff;background:rgba(249,115,22,.9);border-color:transparent}
+.caret{font-size:11px;color:var(--mu)}
+
+/* Status Dropdown */
+.status-menu{
+  position:absolute;top:calc(100% + 10px);left:0;width:270px;z-index:40;
+  background:var(--sf);border:1px solid var(--ln);border-top:4px solid var(--lo);
+  border-radius:16px;padding:14px 16px;box-shadow:0 16px 36px rgba(0,0,0,.22);
+}
+.status-menu h4{font:700 13px var(--d);letter-spacing:.06em;text-transform:uppercase;margin:0 0 10px}
+.status-list{list-style:none;margin:0;padding:0;display:grid;gap:8px;font-size:13px}
+.status-list li{display:flex;justify-content:space-between;align-items:center;padding-bottom:6px;border-bottom:1px solid var(--ln)}
+.status-list li:last-child{border-bottom:0;padding-bottom:0}
+.status-ok{color:var(--lo);font-weight:600}
+.status-blue{color:var(--ac);font-weight:600}
+
+.hrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.user-chip{text-align:right;padding-right:4px;line-height:1.2}
+.user-chip b{display:block;font-size:13px}
+.user-chip small{color:var(--mu);font-size:11px}
+
+.btn{
+  border:1px solid var(--ln);background:var(--sf);border-radius:10px;
+  padding:8px 13px;cursor:pointer;font-weight:600;font-size:13px;
+  display:inline-flex;align-items:center;gap:6px;transition:border-color .15s,filter .15s;
+}
+.btn:hover{border-color:var(--ac)}
+.btn.p{background:linear-gradient(135deg,#4f46e5,#c026d3);border-color:transparent;color:#fff}
+.btn.p:hover{filter:brightness(1.08)}
+.btn.danger:hover{border-color:var(--hi);color:var(--hi)}
+.bell[aria-pressed=true]{border-color:var(--lo)}
+
+/* Hero Banner (Organize Using AI + Top Task) */
+.now{
+  background:linear-gradient(135deg,#4f46e5,#9333ea 55%,#ec4899);
+  color:#fff;border-radius:18px;padding:22px;
+  display:grid;gap:18px;grid-template-columns:1.35fr 1fr;margin-bottom:16px;
+}
+.now-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px}
+.now small{opacity:.9;font-size:13px}
+.now h2{font:700 clamp(20px,3vw,26px)/1.18 var(--d);margin:4px 0 6px}
+.big{font:800 clamp(32px,6vw,50px)/1 var(--d);letter-spacing:-.03em}
+.now .r{
+  display:flex;flex-direction:column;justify-content:center;gap:4px;
+  border-left:1px solid rgba(255,255,255,.32);padding-left:18px;
+}
+
+/* Stat Cards */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.st{
+  background:color-mix(in srgb,var(--c) 12%,var(--sf));
+  border:1px solid color-mix(in srgb,var(--c) 40%,var(--ln));
+  border-top:4px solid var(--c);border-radius:14px;padding:12px 14px;
+}
+.st b{display:block;font:700 26px/1.1 var(--d);color:var(--c)}
+.st span{color:var(--mu);font-size:13px}
+.st:nth-child(1){--c:#4f6bff}
+.st:nth-child(2){--c:#f59e0b}
+.st:nth-child(3){--c:#e5484d}
+.st:nth-child(4){--c:#10b981}
+
+/* Workspace Grid: Left Workload, Right Queue */
+.workspace{display:grid;grid-template-columns:340px 1fr;gap:16px;align-items:start}
+.panel{background:var(--sf);border:1px solid var(--ln);border-radius:16px;padding:16px}
+.panel.p-week{border-top:4px solid #06b6d4}
+.panel.p-queue{border-top:4px solid #c026d3}
+.panel h3{
+  font:700 18px var(--d);margin:0 0 12px;
+  display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;
+}
+.panel h3 small{font:400 12px var(--b);color:var(--mu)}
+
+/* Weekly Vertical Bars */
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;align-items:end;height:150px;padding-top:10px}
+.day{display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;gap:5px;font-size:12px;color:var(--mu)}
+.bar{width:100%;max-width:36px;background:var(--acs);border-radius:6px 6px 2px 2px;min-height:4px;transition:height .35s}
+.bar.f{background:linear-gradient(180deg,#06b6d4,#4f46e5)}
+.bar.m{background:linear-gradient(180deg,#fbbf24,#f97316)}
+.bar.o{background:linear-gradient(180deg,#f97316,#e5484d)}
+.day.t b{color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+.bar-h{font-size:11px;color:var(--ink);font-weight:600;min-height:15px}
+
+/* Queue Tools & List */
+.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.tabs{display:flex;background:var(--bg);border-radius:10px;padding:3px}
+.tabs button{border:0;background:none;padding:6px 14px;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;color:var(--mu)}
+.tabs button[aria-pressed=true]{background:var(--sf);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+select,input[type=text],input[type=number],input[type=datetime-local]{
+  border:1px solid var(--ln);background:var(--sf);border-radius:10px;padding:8px 11px;width:100%;font-size:14px;
+}
+.tools select{width:auto}
+.tools input[type=text]{flex:1;min-width:150px;width:auto}
+
+ul.tlist{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.task{
+  display:grid;grid-template-columns:auto 1fr auto;gap:10px 12px;align-items:start;
+  border:1px solid var(--ln);border-left:5px solid var(--lo);
+  border-radius:12px;padding:12px 14px;background:var(--sf);
+}
+.task.high{border-left-color:var(--hi)}
+.task.medium{border-left-color:var(--md)}
+.task.done{opacity:.58}
+.task.done .tt{text-decoration:line-through}
+.chk{
+  width:24px;height:24px;border-radius:50%;border:2px solid var(--mu);
+  background:none;cursor:pointer;display:grid;place-items:center;margin-top:1px;font-weight:700;
+}
+.done .chk{background:var(--lo);border-color:var(--lo);color:#fff}
+.tt{font-weight:600;font-size:16px;overflow-wrap:anywhere}
+.meta{display:flex;gap:6px 10px;flex-wrap:wrap;font-size:12.5px;color:var(--mu);margin-top:3px;align-items:center}
+.tag{
+  background:color-mix(in srgb,var(--c,#4f6bff) 18%,var(--sf));
+  color:color-mix(in srgb,var(--c,#4f6bff) 75%,var(--ink));
+  border-radius:6px;padding:1px 8px;font-weight:600;font-size:11.5px;
+}
+.c-Academic{--c:#4f6bff}.c-Development{--c:#0ea5a4}.c-Research{--c:#a855f7}.c-Personal{--c:#f59e0b}
+.left{font-weight:700;font-size:13px;text-align:right;white-space:nowrap}
+.left.late{color:var(--hi)}.left.soon{color:var(--md)}
+.rail{grid-column:2/4;height:6px;background:var(--bg);border-radius:3px;overflow:hidden}
+.rail i{display:block;height:100%;background:linear-gradient(90deg,#06b6d4,#4f46e5,#c026d3);border-radius:3px}
+.late-r i{background:var(--hi)}
+.acts{grid-column:2/4;display:flex;gap:12px;font-size:12.5px}
+.lnk{background:none;border:0;padding:0;color:var(--mu);cursor:pointer;text-decoration:underline}
+.lnk:hover{color:var(--ink)}
+.empty{text-align:center;padding:30px 10px;color:var(--mu);font-size:14px}
+
+/* Dialogs */
+dialog{
+  border:1px solid var(--ln);border-radius:16px;background:var(--sf);color:var(--ink);
+  width:min(480px,calc(100% - 24px));padding:20px;box-shadow:0 20px 50px rgba(0,0,0,.3);
+}
+dialog::backdrop{background:rgba(10,14,25,.6);backdrop-filter:blur(3px)}
+dialog h3{font:700 20px var(--d);margin:0 0 14px;display:flex;justify-content:space-between;align-items:center}
+label{display:block;font-size:13px;font-weight:600;margin:0 0 10px}
+label>*{margin-top:4px;font-weight:400}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fa{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+.hist-list{max-height:55vh;overflow-y:auto;display:grid;gap:8px;margin-top:10px}
+
+/* Alerts, Toast & Device Indicator */
+.alerts{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));right:12px;left:12px;max-width:400px;margin-left:auto;display:grid;gap:8px;z-index:60}
+.al{
+  background:var(--sf);border:1px solid var(--ln);border-left:6px solid var(--md);
+  border-radius:12px;padding:10px 12px;box-shadow:0 8px 24px rgba(0,0,0,.25);
+  display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:start;
+}
+.al.late{border-left-color:var(--hi)}
+.al b{font:700 14px var(--d);overflow-wrap:anywhere}
+.al span{grid-column:1;font-size:12.5px;color:var(--mu)}
+.al button{grid-row:1/3;grid-column:2}
+
+.toast{
+  position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));
+  transform:translateX(-50%);background:var(--ink);color:var(--bg);
+  padding:10px 16px;border-radius:10px;display:flex;gap:14px;align-items:center;z-index:60;font-size:13.5px;
+}
+.toast[hidden]{display:none}
+.toast button{background:none;border:0;color:inherit;font-weight:700;text-decoration:underline;cursor:pointer}
+
+.dev-pill{
+  position:fixed;right:14px;bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:20;
+  background:var(--sf);border:1px solid var(--ln);border-radius:999px;
+  padding:5px 11px;font-size:11.5px;color:var(--mu);box-shadow:0 4px 12px rgba(0,0,0,.1);
+}
+
+@media(max-width:860px){
+  .workspace{grid-template-columns:1fr}
+  .user-chip{display:none}
+}
+@media(max-width:700px){
+  .now{grid-template-columns:1fr}
+  .now .r{border-left:0;padding-left:0;border-top:1px solid rgba(255,255,255,.3);padding-top:12px}
+  .stats{grid-template-columns:repeat(2,1fr)}
+}
+@media(prefers-reduced-motion:no-preference){.rail i{transition:width .4s}}
+</style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-emerald-500 selection:text-white">
+<body>
 
-    <!-- AUTHENTICATION OVERLAY / LOGIN MODAL -->
-    <div id="auth-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 sm:p-8 shadow-2xl relative overflow-hidden">
-            <div class="absolute -top-24 -right-24 w-48 h-48 bg-emerald-600/20 rounded-full blur-3xl pointer-events-none"></div>
-            
-            <div class="text-center mb-6">
-                <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-600/10 border border-emerald-500/20 text-emerald-400 mb-4 text-2xl shadow-inner">
-                    <i class="fa-solid fa-brain"></i>
-                </div>
-                <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-white">Smart Deadline Planner</h1>
-                <p class="text-xs text-emerald-400 font-medium mt-1">by Kinetix • IDT Project Demo</p>
-            </div>
+<!-- GOOGLE SIGN-IN OVERLAY -->
+<div id="auth-modal" class="auth-overlay">
+  <div class="auth-card">
+    <div class="auth-logo">K</div>
+    <h1>Smart Deadline Planner</h1>
+    <p class="sub">by Kinetix • Sign in with Google to sync your tasks and history.</p>
+    <button class="g-btn" onclick="handleGoogleLoginClick()">
+      <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+        <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
+        <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.13 0-5.78-2.11-6.73-4.96H1.18v3.15C3.17 21.32 7.23 24 12 24z"/>
+        <path fill="#FBBC05" d="M5.27 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.6H1.18C.43 8.13 0 9.87 0 11.7s.43 3.57 1.18 5.1l4.09-2.56z"/>
+        <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.23 0 3.17 2.68 1.18 6.6l4.09 3.15c.95-2.85 3.6-4.96 6.73-4.96z"/>
+      </svg>
+      <span>Sign in with Google</span>
+    </button>
+  </div>
+</div>
 
-            <!-- Google Sign-In View -->
-            <div class="space-y-4 text-center py-2">
-                <p class="text-xs text-slate-300 leading-relaxed mb-4">Sign in securely with your official Google account to sync your workload and statistics across all your devices.</p>
-                
-                <!-- Custom Reliable Google Sign-In Button -->
-                <button onclick="handleGoogleLoginClick()" class="w-full bg-white hover:bg-slate-100 text-slate-900 font-semibold py-3 px-4 rounded-xl transition-all shadow-md flex items-center justify-center gap-3">
-                    <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24">
-                        <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
-                        <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.13 0-5.78-2.11-6.73-4.96H1.18v3.15C3.17 21.32 7.23 24 12 24z"/>
-                        <path fill="#FBBC05" d="M5.27 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.6H1.18C.43 8.13 0 9.87 0 11.7s.43 3.57 1.18 5.1l4.09-2.56z"/>
-                        <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.23 0 3.17 2.68 1.18 6.6l4.09 3.15c.95-2.85 3.6-4.96 6.73-4.96z"/>
-                    </svg>
-                    <span class="text-xs">Sign in with Google</span>
-                </button>
-            </div>
+<!-- MAIN APPLICATION -->
+<div id="app-container" class="wrap hidden">
+  <header>
+    <!-- Clickable Logo Dropdown (STATUS) -->
+    <div class="brand-wrap" id="logo-dropdown-container">
+      <button class="brand-btn" onclick="toggleStatusDropdown()" aria-expanded="false" id="brand-trigger">
+        <div class="brand-mark">K</div>
+        <div>
+          <h1 class="title">Smart Deadline Planner <span class="caret">▾</span></h1>
+          <div class="brand-meta">
+            <span class="pill kinetix">by Kinetix</span>
+            <span class="pill" id="role-badge">USER</span>
+          </div>
         </div>
+      </button>
+
+      <div id="status-dropdown" class="status-menu hidden">
+        <h4>STATUS</h4>
+        <ul class="status-list">
+          <li><span>Algorithmic Sort</span><span class="status-ok">Active (Local)</span></li>
+          <li><span>Google OAuth</span><span class="status-blue">Verified Active</span></li>
+          <li><span>Storage Sync</span><span>LocalStorage</span></li>
+        </ul>
+      </div>
     </div>
 
-    <!-- MAIN APP CONTAINER -->
-    <div id="app-container" class="hidden flex-1 flex flex-col">
-        <!-- Top Navigation Bar -->
-        <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-40 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2 relative">
-            
-            <!-- Logo Dropdown Container -->
-            <div class="relative" id="logo-dropdown-container">
-                <button onclick="toggleStatusDropdown()" class="flex items-center gap-2 sm:gap-3 min-w-0 hover:opacity-80 transition-opacity focus:outline-none">
-                    <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white border border-slate-300 flex items-center justify-center text-slate-900 shrink-0 shadow-sm">
-                        <i class="fa-solid fa-layer-group text-lg"></i>
-                    </div>
-                    <div class="min-w-0 text-left">
-                        <h1 class="font-bold text-xs sm:text-base tracking-tight text-white flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                            <span class="truncate">Smart Deadline Planner</span>
-                            <span class="text-[10px] sm:text-xs font-medium text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 sm:px-2 py-0.5 rounded-md">by Kinetix</span>
-                            <i class="fa-solid fa-chevron-down text-[10px] text-slate-400 ml-1"></i>
-                        </h1>
-                        <div class="flex items-center gap-2 mt-0.5">
-                            <span id="role-badge" class="text-[9px] sm:text-[10px] uppercase tracking-wider px-2 py-0.2 rounded-full font-semibold border text-white"></span>
-                        </div>
-                    </div>
-                </button>
-
-                <!-- Hidden Dropdown Menu (STATUS) -->
-                <div id="status-dropdown" class="hidden absolute top-full left-0 mt-3 w-64 bg-slate-800 border border-slate-700 rounded-2xl shadow-xl z-50 p-4">
-                    <h3 class="font-bold text-white text-xs uppercase tracking-wider flex items-center gap-2 mb-3">
-                        <i class="fa-solid fa-shield-halved text-emerald-400"></i>
-                        STATUS
-                    </h3>
-                    <ul class="space-y-2 text-xs text-slate-300">
-                        <li class="flex items-center justify-between py-1 border-b border-slate-700/60">
-                            <span>Algorithmic Sort</span>
-                            <span class="text-emerald-400 font-medium">Active (Local)</span>
-                        </li>
-                        <li class="flex items-center justify-between py-1 border-b border-slate-700/60">
-                            <span>Google OAuth</span>
-                            <span class="text-blue-400 font-medium">Verified Active</span>
-                        </li>
-                        <li class="flex items-center justify-between py-1">
-                            <span>Storage Sync</span>
-                            <span class="text-white font-medium">LocalStorage</span>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- User Info & Logout -->
-            <div class="flex items-center gap-3 shrink-0">
-                <div class="text-right hidden md:block">
-                    <div id="user-display-name" class="text-xs font-medium text-slate-200"></div>
-                    <div id="user-display-email" class="text-[10px] text-slate-400"></div>
-                </div>
-                <button onclick="logout()" class="bg-slate-800 hover:bg-orange-500/20 hover:text-orange-400 hover:border-orange-500/30 text-slate-300 border border-slate-700 px-2.5 sm:px-3 py-2 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5 sm:gap-2" title="Switch User / Logout">
-                    <i class="fa-solid fa-right-from-bracket"></i>
-                    <span class="hidden sm:inline">Logout</span>
-                </button>
-            </div>
-        </header>
-
-        <!-- Main Dashboard Content -->
-        <main class="max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6 flex-1">
-
-            <!-- AI Organizer Banner -->
-            <div class="bg-gradient-to-r from-emerald-950/60 via-slate-900 to-slate-900 border border-emerald-500/30 rounded-2xl p-4 sm:p-5 shadow-xl relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                <div class="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
-                <div class="flex items-start gap-3 sm:gap-4">
-                    <div class="p-2.5 sm:p-3 bg-white/10 border border-white/20 rounded-xl text-white text-lg sm:text-xl shrink-0 mt-0.5 shadow-inner">
-                        <i class="fa-solid fa-wand-magic-sparkles"></i>
-                    </div>
-                    <div>
-                        <h2 class="text-xs sm:text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2 flex-wrap">
-                            <span>ORGANIZE USING AI</span>
-                            <span class="bg-orange-500/20 text-orange-400 text-[10px] px-2 py-0.5 rounded font-medium border border-orange-500/30">Under Development</span>
-                        </h2>
-                        <p id="ai-guardian-text" class="text-xs text-slate-300 mt-1 leading-relaxed">Analyzing your task distribution and upcoming deadlines locally...</p>
-                    </div>
-                </div>
-                <button onclick="runAiOptimization()" class="w-full md:w-auto bg-orange-500 hover:bg-orange-400 text-white px-4 py-2.5 sm:py-2 rounded-xl text-xs font-semibold transition-all shadow-md shadow-orange-500/20 shrink-0 flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-bolt"></i>
-                    <span>Check Algorithm Status</span>
-                </button>
-            </div>
-
-            <!-- Metrics Overview Grid -->
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm">
-                    <div class="flex items-center justify-between text-slate-400 mb-2 sm:mb-3">
-                        <span class="text-[10px] sm:text-xs font-medium uppercase tracking-wider truncate text-white">Active Deadlines</span>
-                        <div class="p-1.5 sm:p-2 bg-emerald-500/10 text-emerald-400 rounded-xl"><i class="fa-solid fa-clock"></i></div>
-                    </div>
-                    <div id="stat-active-deadlines" class="text-xl sm:text-2xl font-bold text-emerald-400">0</div>
-                    <div class="text-[10px] sm:text-[11px] text-slate-400 mt-1">Pending completion</div>
-                </div>
-
-                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm">
-                    <div class="flex items-center justify-between text-slate-400 mb-2 sm:mb-3">
-                        <span class="text-[10px] sm:text-xs font-medium uppercase tracking-wider truncate text-white">Workload Score</span>
-                        <div class="p-1.5 sm:p-2 bg-orange-500/10 text-orange-400 rounded-xl"><i class="fa-solid fa-layer-group"></i></div>
-                    </div>
-                    <div id="stat-workload-score" class="text-xl sm:text-2xl font-bold text-orange-400">0 hrs</div>
-                    <div class="text-[10px] sm:text-[11px] text-slate-400 mt-1">Total estimated effort</div>
-                </div>
-
-                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm">
-                    <div class="flex items-center justify-between text-slate-400 mb-2 sm:mb-3">
-                        <span class="text-[10px] sm:text-xs font-medium uppercase tracking-wider truncate text-white">Due Today</span>
-                        <div class="p-1.5 sm:p-2 bg-rose-500/10 text-rose-400 rounded-xl"><i class="fa-solid fa-triangle-exclamation"></i></div>
-                    </div>
-                    <div id="stat-due-soon" class="text-xl sm:text-2xl font-bold text-white">0</div>
-                    <div class="text-[10px] sm:text-[11px] text-slate-400 mt-1">Immediate attention</div>
-                </div>
-
-                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm">
-                    <div class="flex items-center justify-between text-slate-400 mb-2 sm:mb-3">
-                        <span class="text-[10px] sm:text-xs font-medium uppercase tracking-wider truncate text-white">Completed</span>
-                        <div class="p-1.5 sm:p-2 bg-white/10 text-white rounded-xl"><i class="fa-solid fa-check"></i></div>
-                    </div>
-                    <div id="stat-completed" class="text-xl sm:text-2xl font-bold text-white">0</div>
-                    <div class="text-[10px] sm:text-[11px] text-slate-400 mt-1">Successfully finished</div>
-                </div>
-            </div>
-
-            <!-- Main Workspace Grid -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-                
-                <!-- Left Col: Weekly Workload -->
-                <div class="space-y-4 sm:space-y-6 lg:col-span-1">
-                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="font-bold text-white text-xs sm:text-sm uppercase tracking-wider flex items-center gap-2">
-                                <i class="fa-solid fa-chart-bar text-orange-400"></i>
-                                Weekly Workload
-                            </h3>
-                            <span id="weekly-reset-status" class="text-[10px] text-slate-400">Resets Sun 12 AM</span>
-                        </div>
-                        <div id="weekly-workload-bars" class="space-y-3">
-                            <!-- Populated via JavaScript -->
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Right 2 Cols: Task Management -->
-                <div class="lg:col-span-2 space-y-4">
-                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm">
-                        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-5">
-                            <h3 class="font-bold text-white text-xs sm:text-sm uppercase tracking-wider flex items-center gap-2">
-                                <i class="fa-solid fa-list-check text-emerald-400"></i>
-                                Auto-Sorted Queue
-                            </h3>
-                            <div class="flex items-center gap-2 w-full sm:w-auto">
-                                <button onclick="openHistoryModal()" class="flex-1 sm:flex-none bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 px-3 py-2.5 sm:py-2 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5" title="Review Previous Day Tasks">
-                                    <i class="fa-solid fa-clock-rotate-left text-slate-400"></i>
-                                    <span>History</span>
-                                </button>
-                                <button onclick="openTaskModal()" class="flex-1 sm:flex-none bg-emerald-500 hover:bg-emerald-400 text-slate-900 px-4 py-2.5 sm:py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-sm">
-                                    <i class="fa-solid fa-plus"></i>
-                                    <span>Add Task</span>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Search & Filters -->
-                        <div class="flex flex-col sm:flex-row gap-3 mb-4">
-                            <div class="relative flex-1">
-                                <i class="fa-solid fa-search absolute left-3.5 top-3 text-slate-500 text-xs"></i>
-                                <input type="text" id="task-search" oninput="renderTasks()" placeholder="Search tasks by title..." class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-4 py-2.5 sm:py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
-                            </div>
-                            <select id="task-filter-category" onchange="renderTasks()" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 sm:py-2 text-xs text-slate-300 focus:outline-none focus:border-emerald-500">
-                                <option value="all">All Categories</option>
-                                <option value="Academic">Academic</option>
-                                <option value="Development">Development</option>
-                                <option value="Research">Research</option>
-                                <option value="Personal">Personal</option>
-                            </select>
-                        </div>
-
-                        <!-- Task List Container -->
-                        <div id="task-list" class="space-y-3 max-h-[480px] overflow-y-auto pr-1">
-                            <!-- Populated via JavaScript -->
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-        </main>
+    <!-- Header Actions -->
+    <div class="hrow">
+      <div class="user-chip">
+        <b id="user-display-name"></b>
+        <small id="user-display-email"></small>
+      </div>
+      <button class="btn bell" id="bell" aria-pressed="true">Reminders on</button>
+      <button class="btn" id="theme" aria-label="Switch light or dark theme">Theme</button>
+      <button class="btn" id="histBtn">History</button>
+      <button class="btn p" id="add">+ Add task</button>
+      <button class="btn danger" onclick="logout()">Logout</button>
     </div>
+  </header>
 
-    <!-- FLOATING DEVICE MODE INDICATOR (Bottom Right) -->
-    <div id="device-indicator" class="fixed bottom-4 right-4 z-30 hidden bg-slate-900/90 border border-slate-800 backdrop-blur px-3 py-1.5 rounded-full shadow-lg text-[11px] flex items-center gap-2 text-slate-300">
-        <span id="device-icon" class="text-emerald-400"><i class="fa-solid fa-desktop"></i></span>
-        <span id="device-text">Desktop Mode</span>
-    </div>
+  <!-- ORGANIZE USING AI + Top Priority Hero -->
+  <section class="now" aria-live="polite" id="now"></section>
 
-    <!-- ADD/EDIT TASK MODAL -->
-    <div id="task-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4 hidden">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-5 sm:p-6 shadow-2xl">
-            <div class="flex items-center justify-between mb-4">
-                <h3 id="modal-title" class="font-bold text-white text-sm sm:text-base">Add New Task & Deadline</h3>
-                <button onclick="closeTaskModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-            <form id="task-form" onsubmit="saveTask(event)" class="space-y-4">
-                <input type="hidden" id="task-id">
-                <div>
-                    <label class="block text-xs font-medium text-slate-300 mb-1">Task Title</label>
-                    <input type="text" id="form-title" required placeholder="e.g. IDT Project Documentation" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500">
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-medium text-slate-300 mb-1">Category</label>
-                        <select id="form-category" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-slate-300 focus:outline-none focus:border-emerald-500">
-                            <option value="Academic">Academic</option>
-                            <option value="Development">Development</option>
-                            <option value="Research">Research</option>
-                            <option value="Personal">Personal</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-300 mb-1">Estimated Hours</label>
-                        <input type="number" id="form-hours" min="1" max="40" value="4" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500">
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-medium text-slate-300 mb-1">Deadline Date & Time</label>
-                        <input type="datetime-local" id="form-deadline" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-300 mb-1">Priority Level</label>
-                        <select id="form-priority" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-slate-300 focus:outline-none focus:border-emerald-500">
-                            <option value="High">High Priority</option>
-                            <option value="Medium" selected>Medium Priority</option>
-                            <option value="Low">Low Priority</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="flex justify-end gap-3 pt-2">
-                    <button type="button" onclick="closeTaskModal()" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2.5 sm:py-2 rounded-xl text-xs font-semibold transition-all">Cancel</button>
-                    <button type="submit" class="bg-emerald-500 hover:bg-emerald-400 text-slate-900 px-5 py-2.5 sm:py-2 rounded-xl text-xs font-bold transition-all shadow-md">Save Task</button>
-                </div>
-            </form>
+  <!-- 4 Stat Cards -->
+  <section class="stats" id="stats"></section>
+
+  <!-- Main 2-Column Workspace (Left: Weekly Workload, Right: Queue) -->
+  <div class="workspace">
+    <section class="panel p-week">
+      <h3>Weekly Workload <small>Resets Sun 12 AM</small></h3>
+      <div class="week" id="week"></div>
+    </section>
+
+    <section class="panel p-queue">
+      <h3>Auto-Sorted Queue <small id="count"></small></h3>
+      <div class="tools">
+        <div class="tabs" role="group" aria-label="Show">
+          <button id="tA" aria-pressed="true">Active</button>
+          <button id="tD" aria-pressed="false">Done</button>
         </div>
-    </div>
+        <input type="text" id="q" placeholder="Search tasks..." aria-label="Search tasks">
+        <select id="fc" aria-label="Filter by category">
+          <option value="">All categories</option>
+          <option value="Academic">Academic</option>
+          <option value="Development">Development</option>
+          <option value="Research">Research</option>
+          <option value="Personal">Personal</option>
+        </select>
+      </div>
+      <ul class="tlist" id="list"></ul>
+    </section>
+  </div>
+</div>
 
-    <!-- PREVIOUS TASKS HISTORY MODAL -->
-    <div id="history-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4 hidden">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-5 sm:p-6 shadow-2xl flex flex-col max-h-[85vh]">
-            <div class="flex items-center justify-between mb-4 shrink-0">
-                <h3 class="font-bold text-white text-sm sm:text-base flex items-center gap-2">
-                    <i class="fa-solid fa-clock-rotate-left text-orange-400"></i>
-                    Previous Day's Tasks
-                </h3>
-                <button onclick="closeHistoryModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-            <p class="text-xs text-slate-400 mb-4 shrink-0">Review tasks and deadlines archived from yesterday's session:</p>
-            <div id="history-task-list" class="space-y-3 overflow-y-auto pr-1 flex-1">
-                <!-- Populated via JavaScript -->
-            </div>
-            <div class="pt-4 mt-2 border-t border-slate-800 text-right shrink-0">
-                <button onclick="closeHistoryModal()" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-xl text-xs font-semibold transition-all">Close</button>
-            </div>
+<!-- ADD / EDIT TASK DIALOG -->
+<dialog id="dlg">
+  <form id="f" method="dialog">
+    <h3 id="dt">Add task</h3>
+    <label>Task title
+      <input type="text" id="fT" required maxlength="120" placeholder="e.g. IDT Project Documentation">
+    </label>
+    <div class="g2">
+      <label>Category
+        <select id="fC">
+          <option value="Academic">Academic</option>
+          <option value="Development">Development</option>
+          <option value="Research">Research</option>
+          <option value="Personal">Personal</option>
+        </select>
+      </label>
+      <label>Priority
+        <select id="fP">
+          <option value="High">High</option>
+          <option value="Medium" selected>Medium</option>
+          <option value="Low">Low</option>
+        </select>
+      </label>
+    </div>
+    <div class="g2">
+      <label>Estimated hours
+        <input type="number" id="fH" min="0.25" step="0.25" max="40" value="2" required>
+      </label>
+      <label>Deadline
+        <input type="datetime-local" id="fD" required>
+      </label>
+    </div>
+    <div class="fa">
+      <button type="button" class="btn" id="cancel">Cancel</button>
+      <button class="btn p" id="save" value="save">Save task</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- PREVIOUS TASKS HISTORY DIALOG -->
+<dialog id="history-dlg">
+  <h3>Previous Day's Tasks</h3>
+  <p style="margin:0 0 8px;font-size:13px;color:var(--mu)">Tasks archived automatically at the 12:00 AM daily reset:</p>
+  <div id="history-task-list" class="hist-list"></div>
+  <div class="fa">
+    <button type="button" class="btn" id="closeHist">Close</button>
+  </div>
+</dialog>
+
+<div class="alerts" id="alerts" role="alert"></div>
+<div class="toast" id="toast" hidden role="status"><span id="tm"></span><button id="undo">Undo</button></div>
+<div class="dev-pill hidden" id="device-indicator">Desktop UI</div>
+
+<script>
+let currentUser = null;
+let tasks = [];
+let historyTasks = [];
+let tokenClient = null;
+let view = 'active';
+let editId = null;
+let lastDel = null;
+let toastTimer = null;
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* --- Dropdown Toggle --- */
+function toggleStatusDropdown() {
+  const menu = $('status-dropdown');
+  const open = menu.classList.toggle('hidden');
+  $('brand-trigger').setAttribute('aria-expanded', String(!open));
+}
+document.addEventListener('click', (e) => {
+  const wrap = $('logo-dropdown-container');
+  const menu = $('status-dropdown');
+  if (wrap && !wrap.contains(e.target) && !menu.classList.contains('hidden')) {
+    menu.classList.add('hidden');
+    $('brand-trigger').setAttribute('aria-expanded', 'false');
+  }
+});
+
+/* --- Google OAuth 2.0 Setup --- */
+window.onload = function () {
+  if (typeof google !== 'undefined' && google.accounts) {
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: "1058756730435-0b1h2tmegb4b0r2jhb9kpjngjp6egois.apps.googleusercontent.com", // Replace with your actual Google Client ID
+      scope: 'email profile',
+      callback: (response) => {
+        if (response && response.access_token) fetchUserProfile(response.access_token);
+      }
+    });
+  }
+};
+
+function handleGoogleLoginClick() {
+  if (tokenClient) {
+    tokenClient.requestAccessToken();
+  } else {
+    alert("Google Sign-In is still initializing or blocked by an extension. Please refresh or check your connection.");
+  }
+}
+
+function fetchUserProfile(accessToken) {
+  fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+    headers: { 'Authorization': `Bearer ${accessToken}` }
+  })
+  .then(r => r.json())
+  .then(data => {
+    currentUser = { email: data.email, name: data.name, role: "USER" };
+    localStorage.setItem('smart_planner_session', JSON.stringify(currentUser));
+    loadUserData();
+    initApp();
+  })
+  .catch(err => console.error("Failed to fetch profile:", err));
+}
+
+function logout() {
+  currentUser = null;
+  localStorage.removeItem('smart_planner_session');
+  $('app-container').classList.add('hidden');
+  $('auth-modal').classList.remove('hidden');
+}
+
+/* --- User-Segregated Storage & 24-Hour Midnight Reset --- */
+function getStorageKey(suffix) {
+  if (!currentUser) return `smart_planner_${suffix}_default`;
+  return `smart_planner_${suffix}_${currentUser.email.replace(/[@.]/g, '_')}`;
+}
+
+function saveTasks() {
+  localStorage.setItem(getStorageKey('tasks'), JSON.stringify(tasks));
+}
+
+function loadUserData() {
+  try { tasks = JSON.parse(localStorage.getItem(getStorageKey('tasks'))) || []; } catch { tasks = []; }
+  try { historyTasks = JSON.parse(localStorage.getItem(getStorageKey('history'))) || []; } catch { historyTasks = []; }
+  checkDailyMidnightReset();
+}
+
+function checkDailyMidnightReset() {
+  const todayStr = new Date().toDateString();
+  const dateKey = getStorageKey('last_date');
+  const lastActiveDate = localStorage.getItem(dateKey);
+
+  if (lastActiveDate && lastActiveDate !== todayStr) {
+    if (tasks.length > 0) {
+      const archivedBatch = tasks.map(t => ({ ...t, archivedDate: lastActiveDate }));
+      historyTasks = [...archivedBatch, ...historyTasks];
+      localStorage.setItem(getStorageKey('history'), JSON.stringify(historyTasks));
+    }
+    tasks = [];
+    saveTasks();
+  }
+  localStorage.setItem(dateKey, todayStr);
+}
+
+/* --- Smart Local Sorting Algorithm (Priority -> Hours -> Deadline) --- */
+const PRIORITY_WEIGHT = { High: 3, Medium: 2, Low: 1, high: 3, medium: 2, low: 1 };
+
+function sortTasks(list) {
+  return list.slice().sort((a, b) => {
+    if (a.completed !== b.completed) return a.completed ? 1 : -1;
+    const pwA = PRIORITY_WEIGHT[a.priority] || 2;
+    const pwB = PRIORITY_WEIGHT[b.priority] || 2;
+    if (pwA !== pwB) return pwB - pwA;
+    if (a.hours !== b.hours) return b.hours - a.hours;
+    return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
+  });
+}
+
+function hrsLeft(t) { return (new Date(t.deadline) - Date.now()) / 36e5; }
+function fmtDur(h) {
+  const a = Math.abs(h);
+  if (a < 1) return Math.max(1, Math.round(a * 60)) + ' min';
+  if (a < 48) return Math.round(a) + ' h';
+  return Math.round(a / 24) + ' d';
+}
+
+function toast(msg, allowUndo) {
+  $('tm').textContent = msg;
+  $('undo').style.display = allowUndo ? '' : 'none';
+  $('toast').hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { $('toast').hidden = true; }, 5000);
+}
+
+/* --- Main Render --- */
+function render() {
+  if (!currentUser) return;
+  const active = tasks.filter(t => !t.completed);
+  const done = tasks.filter(t => t.completed);
+  const sortedActive = sortTasks(active);
+  const top = sortedActive[0];
+  const now = new Date();
+
+  const totalHours = active.reduce((s, t) => s + Number(t.hours || 0), 0);
+  const dueSoon = active.filter(t => {
+    const diff = new Date(t.deadline) - now;
+    return diff > 0 && diff <= 48 * 36e5;
+  }).length;
+
+  // Hero: ORGANIZE USING AI (Under Development) + Top Sorted Task
+  if (top) {
+    const sl = hrsLeft(top) - top.hours;
+    $('now').innerHTML = `
+      <div>
+        <div class="now-head">
+          <small style="font-weight:700;letter-spacing:.05em">ORGANIZE USING AI</small>
+          <span class="pill dev">Under Development</span>
         </div>
-    </div>
+        <h2>Start with: ${esc(top.title)}</h2>
+        <small>${esc(top.category)} · ${top.priority} priority · ${top.hours} h allotted · due ${new Date(top.deadline).toLocaleString([], {weekday:'short', day:'numeric', month:'short', hour:'numeric', minute:'2-digit'})}</small>
+      </div>
+      <div class="r">
+        <small>${sl < 0 ? 'Behind schedule by' : 'Buffer before start'}</small>
+        <div class="big">${fmtDur(sl)}</div>
+        <small>Auto-sorted locally by priority &amp; hours.</small>
+      </div>`;
+  } else {
+    $('now').innerHTML = `
+      <div>
+        <div class="now-head">
+          <small style="font-weight:700;letter-spacing:.05em">ORGANIZE USING AI</small>
+          <span class="pill dev">Under Development</span>
+        </div>
+        <h2>All clear. Add a task to build your auto-sorted plan.</h2>
+        <small>Local algorithm ranks tasks by Priority, Time Allotted, and Deadline.</small>
+      </div>
+      <div class="r">
+        <div class="big">0</div>
+        <small>active deadlines</small>
+      </div>`;
+  }
 
-    <!-- JAVASCRIPT LOGIC -->
-    <script>
-        let currentUser = null;
-        let tasks = [];
-        let historyTasks = [];
-        let tokenClient;
+  // 4 Stat Cards
+  $('stats').innerHTML = [
+    [active.length, 'Active deadlines'],
+    [(totalHours % 1 ? totalHours.toFixed(1) : totalHours) + ' hrs', 'Workload score'],
+    [dueSoon, 'Due within 48h'],
+    [done.length, 'Completed']
+  ].map(([val, lbl]) => `<div class="st"><b>${val}</b><span>${lbl}</span></div>`).join('');
 
-        // Dropdown toggle logic and click-outside listener
-        function toggleStatusDropdown() {
-            document.getElementById('status-dropdown').classList.toggle('hidden');
+  // Weekly Workload (Mon-Sun vertical bars)
+  const days = [
+    { name: 'Mon', index: 1 }, { name: 'Tue', index: 2 }, { name: 'Wed', index: 3 },
+    { name: 'Thu', index: 4 }, { name: 'Fri', index: 5 }, { name: 'Sat', index: 6 },
+    { name: 'Sun', index: 0 }
+  ];
+  const map = { 0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0 };
+  active.forEach(t => {
+    const d = new Date(t.deadline);
+    if (!isNaN(d)) map[d.getDay()] += Number(t.hours || 0);
+  });
+  const maxH = Math.max(8, ...Object.values(map));
+  const todayIdx = now.getDay();
+
+  $('week').innerHTML = days.map(d => {
+    const h = map[d.index];
+    const px = h > 0 ? Math.max(8, Math.round((h / maxH) * 95)) : 4;
+    const cls = h > 8 ? 'o' : h > 4 ? 'm' : h > 0 ? 'f' : '';
+    return `
+      <div class="day ${d.index === todayIdx ? 't' : ''}">
+        <span class="bar-h">${h ? (h % 1 ? h.toFixed(1) : h) + 'h' : ''}</span>
+        <div class="bar ${cls}" style="height:${px}px"></div>
+        <b>${d.name}</b>
+      </div>`;
+  }).join('');
+
+  // Task Queue
+  const q = $('q').value.toLowerCase();
+  const fc = $('fc').value;
+  let src = view === 'active'
+    ? sortedActive
+    : done.slice().sort((a, b) => (b.doneAt || 0) - (a.doneAt || 0));
+
+  src = src.filter(t => (!fc || t.category === fc) && (!q || t.title.toLowerCase().includes(q)));
+  $('count').textContent = src.length + (src.length === 1 ? ' task' : ' tasks');
+
+  if (!src.length) {
+    $('list').innerHTML = `<li class="empty">${
+      view === 'active'
+        ? (tasks.length ? 'No matching tasks.' : 'No tasks yet. Click "+ Add task" or press N to add your first deadline.')
+        : 'Completed tasks will appear here.'
+    }</li>`;
+    return;
+  }
+
+  $('list').innerHTML = src.map(t => {
+    const h = hrsLeft(t);
+    const late = h < 0;
+    const cls = late ? 'late' : h < 24 ? 'soon' : '';
+    const created = t.created || Date.now();
+    const span = new Date(t.deadline) - created;
+    const pct = span > 0 ? Math.min(100, Math.max(0, ((Date.now() - created) / span) * 100)) : 100;
+    const priLower = String(t.priority || 'Medium').toLowerCase();
+
+    return `
+      <li class="task ${priLower} ${t.completed ? 'done' : ''}" data-id="${t.id}">
+        <button class="chk" data-a="tog" aria-label="${t.completed ? 'Mark active' : 'Mark done'}: ${esc(t.title)}">${t.completed ? '✓' : ''}</button>
+        <div>
+          <div class="tt">${esc(t.title)}</div>
+          <div class="meta">
+            <span class="tag c-${esc(t.category)}">${esc(t.category)}</span>
+            <span>${t.hours} h</span>
+            <span>${new Date(t.deadline).toLocaleString([], {day:'numeric', month:'short', hour:'numeric', minute:'2-digit'})}</span>
+            <span>${esc(t.priority)} priority</span>
+          </div>
+        </div>
+        ${t.completed
+          ? '<div class="left">Done</div>'
+          : `<div class="left ${cls}">${late ? fmtDur(h) + ' overdue' : fmtDur(h) + ' left'}</div>
+             <div class="rail ${late ? 'late-r' : ''}" aria-hidden="true"><i style="width:${pct}%"></i></div>`
         }
+        <div class="acts">
+          ${t.completed ? '' : '<button class="lnk" data-a="ics">Add to calendar</button>'}
+          <button class="lnk" data-a="edit">Edit</button>
+          <button class="lnk" data-a="del">Delete</button>
+        </div>
+      </li>`;
+  }).join('');
+}
 
-        document.addEventListener('click', (e) => {
-            const dropdown = document.getElementById('status-dropdown');
-            const container = document.getElementById('logo-dropdown-container');
-            if (container && !container.contains(e.target) && !dropdown.classList.contains('hidden')) {
-                dropdown.classList.add('hidden');
-            }
-        });
+/* --- Modals & Task CRUD --- */
+function toLocalInput(d) {
+  const z = new Date(d.getTime() - d.getTimezoneOffset() * 6e4);
+  return z.toISOString().slice(0, 16);
+}
 
-        // Initialize Google Identity Services Token Client
-        window.onload = function () {
-            if (typeof google !== 'undefined' && google.accounts) {
-                tokenClient = google.accounts.oauth2.initTokenClient({
-                    client_id: "1058756730435-0b1h2tmegb4b0r2jhb9kpjngjp6egois.apps.googleusercontent.com", // Replace with your actual Google Client ID
-                    scope: 'email profile',
-                    callback: (response) => {
-                        if (response && response.access_token) {
-                            fetchUserProfile(response.access_token);
-                        }
-                    }
-                });
-            }
-        };
+function openDlg(t) {
+  editId = t ? t.id : null;
+  $('dt').textContent = t ? 'Edit task' : 'Add task';
+  $('fT').value = t ? t.title : '';
+  $('fC').value = t ? t.category : 'Academic';
+  $('fP').value = t ? t.priority : 'Medium';
+  $('fH').value = t ? t.hours : 2;
+  const def = new Date(Date.now() + 864e5);
+  def.setMinutes(0, 0, 0);
+  $('fD').value = t ? t.deadline : toLocalInput(def);
+  $('dlg').showModal();
+  $('fT').focus();
+}
 
-        // Trigger Google Login Popup
-        function handleGoogleLoginClick() {
-            if (tokenClient) {
-                tokenClient.requestAccessToken();
-            } else {
-                alert("Google Sign-In is still initializing or blocked. Please check your connection.");
-            }
-        }
+$('add').onclick = () => openDlg();
+$('cancel').onclick = () => $('dlg').close();
 
-        // Fetch user profile using the access token
-        function fetchUserProfile(accessToken) {
-            fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-                headers: { 'Authorization': `Bearer ${accessToken}` }
-            })
-            .then(res => res.json())
-            .then(data => {
-                currentUser = {
-                    email: data.email,
-                    name: data.name,
-                    role: "USER",
-                    badge: "bg-white/10 text-white border-white/20"
-                };
+$('f').onsubmit = (e) => {
+  e.preventDefault();
+  const payload = {
+    title: $('fT').value.trim(),
+    category: $('fC').value,
+    priority: $('fP').value,
+    hours: parseFloat($('fH').value) || 1,
+    deadline: $('fD').value
+  };
+  if (!payload.title || !payload.deadline) return;
 
-                localStorage.setItem('smart_planner_session', JSON.stringify(currentUser));
-                loadUserData();
-                initApp();
-            })
-            .catch(err => console.error("Failed to fetch user profile:", err));
-        }
+  if (editId !== null) {
+    tasks = tasks.map(t => String(t.id) === String(editId) ? { ...t, ...payload, rem: [] } : t);
+  } else {
+    tasks.push({
+      ...payload,
+      id: Date.now(),
+      created: Date.now(),
+      createdDate: new Date().toDateString(),
+      completed: false
+    });
+  }
+  saveTasks();
+  $('dlg').close();
+  render();
+  toast(editId !== null ? 'Task updated' : 'Task added & sorted', false);
+  askPerm();
+  checkReminders();
+};
 
-        function getStorageKey(suffix) {
-            if (!currentUser) return `smart_planner_${suffix}_default`;
-            return `smart_planner_${suffix}_${currentUser.email.replace(/[@.]/g, '_')}`;
-        }
+$('list').onclick = (e) => {
+  const b = e.target.closest('button[data-a]');
+  if (!b) return;
+  const id = b.closest('.task').dataset.id;
+  const t = tasks.find(x => String(x.id) === String(id));
+  if (!t) return;
+  const action = b.dataset.a;
 
-        function loadUserData() {
-            tasks = JSON.parse(localStorage.getItem(getStorageKey('tasks'))) || [];
-            historyTasks = JSON.parse(localStorage.getItem(getStorageKey('history'))) || [];
-            checkDailyMidnightReset();
-        }
+  if (action === 'tog') {
+    t.completed = !t.completed;
+    t.doneAt = t.completed ? Date.now() : 0;
+    saveTasks();
+    render();
+    toast(t.completed ? 'Marked as done' : 'Moved back to active', false);
+  } else if (action === 'ics') {
+    exportICS(t);
+  } else if (action === 'edit') {
+    openDlg(t);
+  } else if (action === 'del') {
+    lastDel = t;
+    tasks = tasks.filter(x => String(x.id) !== String(id));
+    saveTasks();
+    render();
+    toast('Task deleted', true);
+  }
+};
 
-        function checkDailyMidnightReset() {
-            const todayStr = new Date().toDateString();
-            const dateKey = getStorageKey('last_date');
-            const lastActiveDate = localStorage.getItem(dateKey);
+$('undo').onclick = () => {
+  if (lastDel) {
+    tasks.push(lastDel);
+    lastDel = null;
+    saveTasks();
+    render();
+    $('toast').hidden = true;
+  }
+};
 
-            if (lastActiveDate && lastActiveDate !== todayStr) {
-                if (tasks.length > 0) {
-                    const archivedBatch = tasks.map(t => ({ ...t, archivedDate: lastActiveDate }));
-                    historyTasks = [...archivedBatch, ...historyTasks];
-                    localStorage.setItem(getStorageKey('history'), JSON.stringify(historyTasks));
-                }
-                tasks = [];
-                localStorage.setItem(getStorageKey('tasks'), JSON.stringify(tasks));
-            }
-            localStorage.setItem(dateKey, todayStr);
-        }
+/* --- History Dialog --- */
+$('histBtn').onclick = () => {
+  const box = $('history-task-list');
+  if (!historyTasks.length) {
+    box.innerHTML = '<div class="empty">No previous day task history found for this account.</div>';
+  } else {
+    box.innerHTML = historyTasks.map(h => `
+      <div class="task ${String(h.priority || 'Medium').toLowerCase()}" style="grid-template-columns:1fr auto">
+        <div>
+          <div class="tt" style="font-size:14.5px">${esc(h.title)}</div>
+          <div class="meta">
+            <span class="tag c-${esc(h.category)}">${esc(h.category)}</span>
+            <span>${h.hours} h</span>
+            <span>Archived: ${esc(h.archivedDate || 'Previous Day')}</span>
+          </div>
+        </div>
+        <div class="left" style="color:${h.completed ? 'var(--lo)' : 'var(--mu)'}">${h.completed ? 'Completed' : 'Expired'}</div>
+      </div>`).join('');
+  }
+  $('history-dlg').showModal();
+};
+$('closeHist').onclick = () => $('history-dlg').close();
 
-        function checkDeviceType() {
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
-            const indicator = document.getElementById('device-indicator');
-            const icon = document.getElementById('device-icon');
-            const text = document.getElementById('device-text');
+/* --- Filters, Tabs, Theme, Shortcuts --- */
+$('tA').onclick = $('tD').onclick = function () {
+  view = this.id === 'tA' ? 'active' : 'done';
+  $('tA').setAttribute('aria-pressed', String(view === 'active'));
+  $('tD').setAttribute('aria-pressed', String(view === 'done'));
+  render();
+};
+$('q').oninput = $('fc').onchange = render;
 
-            indicator.classList.remove('hidden');
-            if (isMobile) {
-                icon.innerHTML = `<i class="fa-solid fa-mobile-screen-button"></i>`;
-                text.textContent = "Mobile UI Active";
-            } else {
-                icon.innerHTML = `<i class="fa-solid fa-desktop"></i>`;
-                text.textContent = "Desktop UI Active";
-            }
-        }
+$('theme').onclick = () => {
+  const r = document.documentElement;
+  const isDark = r.dataset.theme ? r.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme:dark)').matches;
+  r.dataset.theme = isDark ? 'light' : 'dark';
+};
 
-        window.addEventListener('resize', checkDeviceType);
+document.addEventListener('keydown', (e) => {
+  if (currentUser && e.key === 'n' && !e.metaKey && !e.ctrlKey && !/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName) && !$('dlg').open) {
+    e.preventDefault();
+    openDlg();
+  }
+});
 
-        window.addEventListener('DOMContentLoaded', () => {
-            checkDeviceType();
-            const savedSession = localStorage.getItem('smart_planner_session');
-            if (savedSession) {
-                try {
-                    currentUser = JSON.parse(savedSession);
-                    loadUserData();
-                    initApp();
-                } catch (e) {
-                    localStorage.removeItem('smart_planner_session');
-                }
-            }
-        });
+/* --- Reminders & Calendar (.ics) --- */
+const REM_KEY = 'kinetix.planner.rem';
+let remOn = true;
+try { remOn = localStorage.getItem(REM_KEY) !== '0'; } catch {}
 
-        function initApp() {
-            document.getElementById('auth-modal').classList.add('hidden');
-            document.getElementById('app-container').classList.remove('hidden');
+function updateBell() {
+  const p = ('Notification' in window) ? Notification.permission : 'unsupported';
+  const b = $('bell');
+  b.setAttribute('aria-pressed', String(remOn));
+  b.textContent = remOn ? (p === 'granted' ? 'Reminders on' : 'Reminders on (in app)') : 'Reminders off';
+}
+function askPerm() {
+  if (remOn && 'Notification' in window && Notification.permission === 'default') {
+    try { Notification.requestPermission().then(updateBell); } catch {}
+  }
+}
+function beep() {
+  try {
+    const a = new (window.AudioContext || window.webkitAudioContext)();
+    const o = a.createOscillator(), g = a.createGain();
+    o.connect(g); g.connect(a.destination);
+    o.frequency.value = 880; g.gain.value = 0.08;
+    o.start(); o.stop(a.currentTime + 0.18);
+  } catch {}
+}
+function showBanner(title, msg, late) {
+  const d = document.createElement('div');
+  d.className = 'al' + (late ? ' late' : '');
+  d.innerHTML = `<b>${esc(title)}</b><button class="lnk">Dismiss</button><span>${esc(msg)}</span>`;
+  d.querySelector('button').onclick = () => d.remove();
+  $('alerts').appendChild(d);
+  while ($('alerts').children.length > 4) $('alerts').firstChild.remove();
+}
+function sysNotify(title, msg, tag) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  try { new Notification(title, { body: msg, tag: tag || 'planner' }); } catch {}
+}
+function checkReminders() {
+  if (!currentUser) return;
+  const due24 = tasks.filter(t => !t.completed && hrsLeft(t) < 24).length;
+  document.title = (due24 ? `(${due24}) ` : '') + 'Smart Deadline Planner • by Kinetix';
+  if (!remOn) return;
 
-            document.getElementById('user-display-name').textContent = currentUser.name;
-            document.getElementById('user-display-email').textContent = currentUser.email;
-            
-            const badgeEl = document.getElementById('role-badge');
-            badgeEl.textContent = currentUser.role;
-            badgeEl.className = `text-[9px] sm:text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full font-semibold border ${currentUser.badge}`;
+  const out = [];
+  tasks.forEach(t => {
+    if (t.completed) return;
+    t.rem = t.rem || [];
+    const h = hrsLeft(t);
+    const rs = [{k:'d',v:24},{k:'s',v:t.hours},{k:'h',v:1},{k:'o',v:0}].filter(r => h <= r.v);
+    const nw = rs.filter(r => !t.rem.includes(r.k));
+    if (!nw.length) return;
+    rs.forEach(r => { if (!t.rem.includes(r.k)) t.rem.push(r.k); });
+    const k = nw.sort((a, b) => a.v - b.v)[0].k;
+    const msgs = {
+      d: 'Due in under 24 hours.',
+      s: `Time to start. You need ${t.hours} h of work.`,
+      h: 'Due in about an hour.',
+      o: 'Overdue. Finish it or update the deadline.'
+    };
+    out.push({ t, m: msgs[k], late: k === 'o' });
+  });
+  if (out.length) {
+    saveTasks();
+    beep();
+    out.forEach(x => showBanner(x.t.title, x.m, x.late));
+    if (out.length === 1) sysNotify(out[0].t.title, out[0].m, String(out[0].t.id));
+    else sysNotify(`${out.length} tasks need attention`, out.map(x => x.t.title).join(', '));
+  }
+}
 
-            renderTasks();
-            updateMetrics();
-            updateWeeklyWorkload();
-            runAiOptimization();
-        }
+$('bell').onclick = () => {
+  remOn = !remOn;
+  try { localStorage.setItem(REM_KEY, remOn ? '1' : '0'); } catch {}
+  updateBell();
+  if (remOn) {
+    askPerm(); beep();
+    showBanner('Reminders on', 'Alerts trigger 24h before, at start time, 1h before, and when overdue.', false);
+    checkReminders();
+  }
+};
 
-        function logout() {
-            currentUser = null;
-            localStorage.removeItem('smart_planner_session');
-            document.getElementById('app-container').classList.add('hidden');
-            document.getElementById('auth-modal').classList.remove('hidden');
-        }
+function exportICS(t) {
+  const due = new Date(t.deadline);
+  const st = new Date(Math.min(due - t.hours * 36e5, due - 18e5));
+  const z = (d) => d.toISOString().split('.')[0].replace(/[-:]/g, '') + 'Z';
+  const lines = [
+    'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Kinetix//Planner//EN','BEGIN:VEVENT',
+    `UID:${t.id}@kinetix-planner`,`DTSTAMP:${z(new Date())}`,`DTSTART:${z(st)}`,`DTEND:${z(due)}`,
+    `SUMMARY:${t.title.replace(/[,;]/g, ' ')}`,
+    `DESCRIPTION:Category: ${t.category}. ${t.hours} h of work. ${t.priority} priority`,
+    'BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:Time to start','TRIGGER:-PT15M','END:VALARM',
+    'BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:Due in 1 hour','TRIGGER;RELATED=END:-PT1H','END:VALARM',
+    'END:VEVENT','END:VCALENDAR'
+  ];
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([lines.join('\r\n')], { type: 'text/calendar' }));
+  a.download = 'task-reminder.ics';
+  document.body.appendChild(a); a.click(); a.remove();
+  toast('Calendar file downloaded.', false);
+}
 
-        function renderTasks() {
-            const search = document.getElementById('task-search').value.toLowerCase();
-            const categoryFilter = document.getElementById('task-filter-category').value;
-            const container = document.getElementById('task-list');
+/* --- Device Indicator & App Init --- */
+function checkDeviceType() {
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+  const el = $('device-indicator');
+  el.classList.remove('hidden');
+  el.textContent = isMobile ? 'Mobile UI' : 'Desktop UI';
+}
+window.addEventListener('resize', checkDeviceType);
 
-            let filtered = tasks.filter(t => {
-                const matchesSearch = t.title.toLowerCase().includes(search);
-                const matchesCat = categoryFilter === 'all' || t.category === categoryFilter;
-                return matchesSearch && matchesCat;
-            });
+function initApp() {
+  $('auth-modal').classList.add('hidden');
+  $('app-container').classList.remove('hidden');
+  $('user-display-name').textContent = currentUser.name;
+  $('user-display-email').textContent = currentUser.email;
+  $('role-badge').textContent = currentUser.role || 'USER';
+  updateBell();
+  render();
+  checkReminders();
+}
 
-            // ==========================================
-            // SMART LOCAL SORTING ALGORITHM
-            // ==========================================
-            const priorityWeight = { 'High': 3, 'Medium': 2, 'Low': 1 };
-            
-            filtered.sort((a, b) => {
-                // Rule 1: Keep completed tasks at the very bottom
-                if (a.completed !== b.completed) return a.completed ? 1 : -1;
-                
-                // Rule 2: Sort by Priority (High > Medium > Low)
-                if (priorityWeight[a.priority] !== priorityWeight[b.priority]) {
-                    return priorityWeight[b.priority] - priorityWeight[a.priority];
-                }
-
-                // Rule 3: Tie-breaker -> Time Allotted (Highest hours first to tackle big tasks)
-                if (a.hours !== b.hours) {
-                    return b.hours - a.hours;
-                }
-
-                // Rule 4: Final Tie-breaker -> Closest Deadline First
-                return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
-            });
-
-            if (filtered.length === 0) {
-                container.innerHTML = `<div class="text-center py-12 text-slate-500 text-xs">No active tasks for today. Click 'Add Task' to start.</div>`;
-                return;
-            }
-
-            container.innerHTML = filtered.map(t => `
-                <div class="bg-slate-950 border ${t.completed ? 'border-slate-800/40 opacity-60' : 'border-slate-800'} rounded-xl p-3.5 sm:p-4 flex items-center justify-between gap-3 transition-all hover:border-slate-700">
-                    <div class="flex items-center gap-3 min-w-0">
-                        <input type="checkbox" ${t.completed ? 'checked' : ''} onchange="toggleTask(${t.id})" class="w-4 h-4 rounded bg-slate-900 border-slate-700 text-emerald-500 focus:ring-0 cursor-pointer shrink-0">
-                        <div class="min-w-0">
-                            <h4 class="text-xs font-semibold text-white truncate ${t.completed ? 'line-through text-slate-400' : ''}">${t.title}</h4>
-                            <div class="flex items-center gap-2 mt-1 text-[10px] text-slate-400 flex-wrap">
-                                <span class="px-2 py-0.5 rounded bg-slate-900 border border-slate-800">${t.category}</span>
-                                <span><i class="fa-solid fa-clock text-orange-400"></i> ${t.hours} hrs</span>
-                                <span><i class="fa-solid fa-calendar text-slate-500"></i> ${new Date(t.deadline).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})}</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-2 shrink-0">
-                        <span class="text-[9px] sm:text-[10px] px-2 py-0.5 rounded font-medium ${t.priority === 'High' ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' : t.priority === 'Medium' ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'}">${t.priority}</span>
-                        <button onclick="deleteTask(${t.id})" class="text-slate-500 hover:text-rose-400 p-1.5 transition-colors" title="Delete Task"><i class="fa-solid fa-trash text-xs"></i></button>
-                    </div>
-                </div>
-            `).join('');
-
-            updateMetrics();
-            updateWeeklyWorkload();
-        }
-
-        function toggleTask(id) {
-            tasks = tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t);
-            saveAndRefresh();
-        }
-
-        function deleteTask(id) {
-            tasks = tasks.filter(t => t.id !== id);
-            saveAndRefresh();
-        }
-
-        function openTaskModal() {
-            document.getElementById('task-id').value = '';
-            document.getElementById('form-title').value = '';
-            document.getElementById('form-hours').value = '4';
-            document.getElementById('form-deadline').value = '';
-            document.getElementById('modal-title').textContent = "Add New Task & Deadline";
-            document.getElementById('task-modal').classList.remove('hidden');
-        }
-
-        function closeTaskModal() {
-            document.getElementById('task-modal').classList.add('hidden');
-        }
-
-        function openHistoryModal() {
-            const container = document.getElementById('history-task-list');
-            if (historyTasks.length === 0) {
-                container.innerHTML = `<div class="text-center py-10 text-slate-500 text-xs">No previous task history found for this account.</div>`;
-            } else {
-                container.innerHTML = historyTasks.map(h => `
-                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 flex items-center justify-between gap-3">
-                        <div class="min-w-0">
-                            <h4 class="text-xs font-semibold text-white truncate">${h.title}</h4>
-                            <div class="flex items-center gap-2 mt-1 text-[10px] text-slate-400 flex-wrap">
-                                <span class="px-2 py-0.5 rounded bg-slate-900 border border-slate-800">${h.category}</span>
-                                <span><i class="fa-solid fa-clock text-emerald-400"></i> ${h.hours} hrs</span>
-                                <span class="text-orange-300">Archived: ${h.archivedDate || 'Previous Day'}</span>
-                            </div>
-                        </div>
-                        <span class="text-[9px] px-2 py-0.5 rounded font-medium ${h.completed ? 'bg-emerald-500/10 text-emerald-400' : 'bg-slate-800 text-slate-400'}">${h.completed ? 'Completed' : 'Expired'}</span>
-                    </div>
-                `).join('');
-            }
-            document.getElementById('history-modal').classList.remove('hidden');
-        }
-
-        function closeHistoryModal() {
-            document.getElementById('history-modal').classList.add('hidden');
-        }
-
-        function saveTask(e) {
-            e.preventDefault();
-            const title = document.getElementById('form-title').value;
-            const category = document.getElementById('form-category').value;
-            const hours = parseInt(document.getElementById('form-hours').value);
-            const deadline = document.getElementById('form-deadline').value;
-            const priority = document.getElementById('form-priority').value;
-
-            const newTask = {
-                id: Date.now(),
-                title,
-                category,
-                hours,
-                deadline,
-                priority,
-                completed: false,
-                createdDate: new Date().toDateString()
-            };
-
-            tasks.push(newTask);
-            saveAndRefresh();
-            closeTaskModal();
-        }
-
-        function saveAndRefresh() {
-            localStorage.setItem(getStorageKey('tasks'), JSON.stringify(tasks));
-            renderTasks();
-            runAiOptimization();
-        }
-
-        function updateMetrics() {
-            const active = tasks.filter(t => !t.completed).length;
-            const totalHours = tasks.filter(t => !t.completed).reduce((sum, t) => sum + t.hours, 0);
-            const completedCount = tasks.filter(t => t.completed).length;
-            
-            const now = new Date();
-            const dueSoon = tasks.filter(t => {
-                if (t.completed) return false;
-                const diff = new Date(t.deadline) - now;
-                return diff > 0 && diff <= 48 * 60 * 60 * 1000;
-            }).length;
-
-            document.getElementById('stat-active-deadlines').textContent = active;
-            document.getElementById('stat-workload-score').textContent = totalHours + ' hrs';
-            document.getElementById('stat-due-soon').textContent = dueSoon;
-            document.getElementById('stat-completed').textContent = completedCount;
-        }
-
-        function updateWeeklyWorkload() {
-            const days = [
-                { name: 'Mon', index: 1 },
-                { name: 'Tue', index: 2 },
-                { name: 'Wed', index: 3 },
-                { name: 'Thu', index: 4 },
-                { name: 'Fri', index: 5 },
-                { name: 'Sat', index: 6 },
-                { name: 'Sun', index: 0 }
-            ];
-            
-            const container = document.getElementById('weekly-workload-bars');
-            const activeTasks = tasks.filter(t => !t.completed);
-
-            const workloadMap = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
-            activeTasks.forEach(t => {
-                const dayOfWeek = new Date(t.deadline).getDay();
-                workloadMap[dayOfWeek] += t.hours;
-            });
-
-            container.innerHTML = days.map(d => {
-                const load = workloadMap[d.index];
-                const percent = Math.min(Math.round((load / 12) * 100), 100);
-                const color = load > 8 ? 'bg-rose-500' : load > 4 ? 'bg-orange-500' : 'bg-emerald-500';
-
-                return `
-                    <div>
-                        <div class="flex justify-between text-xs mb-1">
-                            <span class="text-slate-300 font-medium">${d.name}</span>
-                            <span class="text-slate-400">${load} hrs</span>
-                        </div>
-                        <div class="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800">
-                            <div class="${color} h-full rounded-full transition-all duration-500" style="width: ${percent}%"></div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function runAiOptimization() {
-            const activeTasks = tasks.filter(t => !t.completed);
-            const aiText = document.getElementById('ai-guardian-text');
-
-            if (activeTasks.length === 0) {
-                aiText.textContent = "All tasks completed! Your schedule is completely clear and balanced.";
-                return;
-            }
-
-            // Local Algorithmic Feedback
-            const highPriorityCount = activeTasks.filter(t => t.priority === 'High').length;
-            const totalHours = activeTasks.reduce((sum, t) => sum + t.hours, 0);
-
-            aiText.innerHTML = `<span class="text-white font-semibold">Algorithm Output:</span> Your task queue has been automatically sorted. You have <strong>${highPriorityCount} High-Priority tasks</strong> demanding <strong>${totalHours} total hours</strong> of attention. Start with the top item!`;
-        }
-    </script>
+window.addEventListener('DOMContentLoaded', () => {
+  checkDeviceType();
+  const saved = localStorage.getItem('smart_planner_session');
+  if (saved) {
+    try {
+      currentUser = JSON.parse(saved);
+      loadUserData();
+      initApp();
+    } catch {
+      localStorage.removeItem('smart_planner_session');
+    }
+  }
+  setInterval(() => {
+    if (currentUser) {
+      checkDailyMidnightReset();
+      render();
+      checkReminders();
+    }
+  }, 30000);
+});
+</script>
 </body>
 </html>
